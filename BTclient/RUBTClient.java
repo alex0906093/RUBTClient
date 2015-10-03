@@ -1,14 +1,17 @@
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.*;
 import java.io.*;
-
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class RUBTClient{
 
 	public static void main(String[] args){
 		String torrentFN;
 		String saveFN;
-		String encodedText = null;
+		String encodedText = "";
+		byte[] b = null;
 		if(args.length == 2){
 			torrentFN = args[0];
 			saveFN = args[1];
@@ -20,14 +23,7 @@ public class RUBTClient{
 		}
 		BufferedReader reader = null;
 		try{
-			File torrentFile = new File(torrentFN);
-			reader = new BufferedReader(new FileReader(torrentFile));
-			String getLines = null;
-			while((getLines = reader.readLine()) != null){
-				encodedText = encodedText + getLines;
-			}
-			System.out.println("encoded text is :" + encodedText);
-			return;
+			b = Files.readAllBytes(Paths.get(torrentFN));
 		} catch(FileNotFoundException e){
 			System.out.println("Caught Exception File not found");
 			//e.printStackTrace();
@@ -45,10 +41,15 @@ public class RUBTClient{
 			}
 
 		}
-	}
-	//pass the encoded string, decode it and return the string
-	private String decode(String encoded){
-		
-		return null;
+		//b = encodedText.getBytes(Charset.forName("UTF-8"));
+		Object o = null;
+		String w = b.toString();
+		System.out.println(w);
+		try{
+		o = GivenTools.Bencoder2.decode(b);
+		}catch(GivenTools.BencodingException l){
+			l.printStackTrace();
+		}
+		//System.out.println(o);
 	}
 }
