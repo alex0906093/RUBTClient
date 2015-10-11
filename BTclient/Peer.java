@@ -120,36 +120,38 @@ public class Peer implements Runnable{
 			lastPiece = tInfo.file_length - (difference * tInfo.piece_length);
 			fOutStream = new FileOutputStream(new File(RUBTClient.file_destination));
 			boolean gotPiece = false;
+
+			//set up while loop to see if we have all the pieces
 			while(numPieces != tInfo.piece_hashes.length){
-				
+				//set up loop for each piece to download
 				while(!gotPiece){
 					if(numPieces + 1 == tInfo.piece_hashes.length){
-					request = new Message(13, (byte) 0);
-					count = (lastPiece < 16KB) ? lastPiece : 16KB;
-					lastPiece -= 16KB;
-					request.setPayload(null, -1, -1, count, begin, numPieces, -1);
-					dOutStream.write(request.message);
-					dOutStream.flush();
-					socket.setSoTimeout(timeoutTime);
-					buff = new byte[4];
-						for(int i = 0; i < 4; i++)
-							buff[i] = dInStream.readByte();
+						request = new Message(13, (byte) 0);
+						count = (lastPiece < 16KB) ? lastPiece : 16KB;
+						lastPiece -= 16KB;
+						request.setPayload(null, -1, -1, count, begin, numPieces, -1);
+						dOutStream.write(request.message);
+						dOutStream.flush();
+						socket.setSoTimeout(timeoutTime);
+						buff = new byte[4];
+							for(int i = 0; i < 4; i++)
+								buff[i] = dInStream.readByte();
 						
-					pieceSub = new byte[count];
+						pieceSub = new byte[count];
 					
-						for(int i = 0; i < 9; i++)
-							dInStream.readByte();
-						
-						for(int i =0; i < count; i++)
-							pieceSub[i] = dInStream.readByte();
+							for(int i = 0; i < 9; i++)
+								dInStream.readByte();
+							
+							for(int i =0; i < count; i++)
+								pieceSub[i] = dInStream.readByte();
 
 						this.pieces.add(pieceSub);
 						fOutStream.write(pieceSub);
-						if(lastPiece < 0){
-							numPieces++;
-							gotPiece=true;
-							continue;
-						}
+							if(lastPiece < 0){
+								numPieces++;
+								gotPiece=true;
+								continue;
+							}
 						begin += count;
 					} else{
 						request = new Message(13, (byte) 6);
