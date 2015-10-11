@@ -8,7 +8,7 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 
 public class RUBTClient{
-    
+    public String file_destination;
 
 	public static void main(String[] args){
 		String torrentFN;
@@ -18,6 +18,7 @@ public class RUBTClient{
 		if(args.length == 2){
 			torrentFN = args[0];
 			saveFN = args[1];
+			file_destination = saveFN;
 			//System.out.println("torrent file: " + torrentFN + " save file: " + saveFN);
 		}
 		else{

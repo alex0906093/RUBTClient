@@ -21,6 +21,7 @@ public class TrackerResponse{
     /*
      *Keys for fields
      */
+    public final int NUM_PEERS = 33;
     public static final ByteBuffer KEY_FAILURE = ByteBuffer.wrap(new byte[]{'f', 'a', 'i','l','u', 'r', 'e', ' ', 'r', 'e', 'a', 's', 'o', 'n',});
     public static final ByteBuffer KEY_PEERS = ByteBuffer.wrap(new byte[] {'p', 'e', 'e', 'r', 's' });
     public static final ByteBuffer KEY_INTERVAL = ByteBuffer.wrap(new byte[] {'i', 'n', 't', 'e', 'r', 'v', 'a','l' });
@@ -60,6 +61,8 @@ public class TrackerResponse{
             System.out.println("Warning: no min interval, setting to zero");
             this.minInterval = 0;
         }
+        //need to figure out how to decode this response map correctly
+        //ArrayList<HashMap<ByteBuffer, Object>> encodedPeerList = null;
         ByteBuffer peersResponse = (ByteBuffer) response.get(KEY_PEERS);
         this.peers = new ArrayList<Peer>();
 
