@@ -1,5 +1,5 @@
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 /*
@@ -11,6 +11,7 @@ public class TrackerResponse{
      *Fields to be received from tracker
      */
     public String TrackerID;
+    public ArrayList<Peer> peers;
     public String failureReason;
     public String failureMessage;
     public int interval;
@@ -56,8 +57,26 @@ public class TrackerResponse{
         if (response.containsKey(KEY_MIN_INTERVAL))
             this.minInterval = (Integer) response.get(KEY_MIN_INTERVAL);
         else {
-            System.out.println("Warning: no minimum interval, setting to zero");
-            this.minimumInterval = 0;
+            System.out.println("Warning: no min interval, setting to zero");
+            this.minInterval = 0;
+        }
+        ByteBuffer peersResponse = (ByteBuffer) response.get(KEY_PEERS);
+        this.peers = new ArrayList<Peer>();
+
+        for (int i = 0; i < NUM_PEERS; i++){
+            try{
+                //read the peer response and add to the list of peers
+                String peerIP = "";
+                peerIP += peersResponse.get() & 0xff;peerIP += ":";
+                peerIP += peersResponse.get() & 0xff;peerIP += ":";
+                peerIP += peersResponse.get() & 0xff;peerIP += ":";
+                peerIP += peersResponse.get() & 0xff;
+                int peerPort = peersResponse.get() * 256 + peersResponse.get();
+                this.peers.add(new Peer(peerIP, peerPort));
+            }
+            catch (Exception e){
+
+            }
         }
     }
     
