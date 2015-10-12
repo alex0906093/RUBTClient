@@ -34,7 +34,7 @@ public class TrackerResponse{
          *get all of the keys from the hash map and set them accordingly
          *
          */
-        if(response.containsKey()){
+        if(response.containsKey(KEY_FAILURE)){
             throw new Exception("Tracker Failed Key Detected");
         }
         if(response.containsKey(KEY_INTERVAL)){
@@ -63,9 +63,12 @@ public class TrackerResponse{
         }
         //need to figure out how to decode this response map correctly
         //ArrayList<HashMap<ByteBuffer, Object>> encodedPeerList = null;
-        ByteBuffer peersResponse = (ByteBuffer) response.get(KEY_PEERS);
+        ArrayList peersResponse = (ArrayList) response.get(KEY_PEERS);
         this.peers = new ArrayList<Peer>();
-
+        for(int i = 0; i < peersResponse.size(); i++){
+            System.out.println(peersResponse.get(i));
+        }
+        /*
         for (int i = 0; i < NUM_PEERS; i++){
             try{
                 //read the peer response and add to the list of peers
@@ -74,13 +77,16 @@ public class TrackerResponse{
                 peerIP += peersResponse.get() & 0xff;peerIP += ":";
                 peerIP += peersResponse.get() & 0xff;peerIP += ":";
                 peerIP += peersResponse.get() & 0xff;
+                
                 int peerPort = peersResponse.get() * 256 + peersResponse.get();
                 this.peers.add(new Peer(peerIP, peerPort));
             }
             catch (Exception e){
-
+                System.out.println("caught exception in TrackerResponse.java");
             }
+
         }
+    */
     }
     
     

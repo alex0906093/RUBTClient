@@ -6,13 +6,28 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.net.URL;
 import java.net.HttpURLConnection;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.nio.ByteBuffer;
 
 public class RUBTClient{
-    public String file_destination;
 
+    public static String file_destination;
+    public static byte[] peerid = "alexchriskyung".getBytes();
+    public static byte[] protocol_string = new byte[] { 'B', 'i', 't', 'T',
+			'o', 'r', 'r', 'e', 'n', 't', ' ', 'p', 'r', 'o', 't', 'o', 'c',
+			'o', 'l' };
+	public static GivenTools.TorrentInfo tInfo = null;
+	public static byte[] info_hash = null;
 	public static void main(String[] args){
 		String torrentFN;
 		String saveFN;
+		TrackerResponse tResponseDecoded = null;
+		boolean found = false;
+		boolean ret = false;
+		ArrayList<Peer> peers = null;
+		byte[] tResponse = null;
 		String encodedText = "";
 		byte[] b = null;
 		if(args.length == 2){
@@ -45,22 +60,90 @@ public class RUBTClient{
 			}
 
 		}
-        GivenTools.TorrentInfo info = null;
         try{
-        info = new GivenTools.TorrentInfo(b);
-        System.out.println(info.file_name);
+        tInfo = new GivenTools.TorrentInfo(b);
+        System.out.println(tInfo.file_name);
         }catch(GivenTools.BencodingException e){
             System.out.println("Bencoding Exception");
         }
+        /*
         try{
             System.out.println(info.announce_url.toString());
             //HttpClientExample http = new HttpClientExample();
-            sendGet(info.announce_url);
+            //sendGet(info.announce_url);
         }catch(Exception e){
-            System.out.println("fuck off");
+        }*/
+        try{
+        	tResponse = getTrackerResponse(tInfo);
         }
+        catch(Exception e){
+        	System.out.println("Problem with GET Request, program exiting");
+        	return;
+        }
+        try{
+        	tResponseDecoded = decodeTrackerResponse(tResponse);
+        }catch(Exception e){
+        	System.out.println("Problem decoding tracker response");
+        	return;
+        }
+
+        peers = tResponseDecoded.peers;
+        int peerIndex;
+        for(peerIndex = 0; peerIndex < peers.size(); peerIndex++){
+        	if(peers.get(peerIndex).toString().contains("128:6:171:3")){
+        		found=true;
+        		break;
+        	}
+        }
+        String ipAdd = peers.get(peerIndex).ipAdd.replaceAll(":", ".");
+        if(!found){
+        	System.out.println("could not find peer with ID RUBT11!");
+        	return;
+        }
+
+        info_hash = tInfo.info_hash.array();
+        Peer peer = new Peer(ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
 	}
     
+    public static TrackerResponse decodeTrackerResponse(byte[] tr) throws GivenTools.BencodingException{
+    	//System.out.println(tr.toString());
+    	Object o = GivenTools.Bencoder2.decode(tr);
+    	HashMap<ByteBuffer, Object> response = (HashMap<ByteBuffer, Object>) o;
+    	TrackerResponse tr2 = null;
+    	try{
+    		tr2 = new TrackerResponse(response);
+    	}catch(Exception e){
+    		System.out.println("problem getting tracker response");
+    		e.printStackTrace();
+    	}
+    	if(tr2 == null){
+    		System.out.println("nothing being decoded");
+    	}
+    	return tr2;
+    }
+
+    public static byte[] getTrackerResponse(GivenTools.TorrentInfo ti) throws UnknownHostException, IOException{
+    	String info_hash = toHexString(ti.info_hash.array());
+    	String peer_id = toHexString("alexchriskyung".getBytes());
+    	String port = "" + 6883;
+    	String downloaded = "" + 0;
+    	String uploaded = "" + 0;
+    	String left = "" + ti.file_length;
+    	String announce = ti.announce_url.toString();
+
+    	String aURL= announce.toString();
+    	aURL += "?" + "info_hash" + "=" + info_hash + "&" + "peer_id" + "=" + peer_id + "&" + "port" + "=" + port + "&" + "uploaded" + "="
+    	+ uploaded + "&" + "downloaded" + "=" + downloaded + "&" + "left" + "=" + left;
+    	System.out.println("URL is : " + aURL);
+    	HttpURLConnection con = (HttpURLConnection)new URL(aURL).openConnection();
+    	DataInputStream dInStream = new DataInputStream(con.getInputStream());
+    	int dSize = con.getContentLength();
+    	byte[] retBytes = new byte[dSize];
+    	dInStream.readFully(retBytes);
+    	dInStream.close();
+    	return retBytes;
+    }
+
     public static void sendGet(URL url) throws Exception{
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("GET");

@@ -1,35 +1,36 @@
 import java.io.*;
 import java.nio.*;
+import java.util.Arrays;
 
 public class Message {
 
     //Declare message types
     
-    public static final KEEP_ALIVE_ID = -1;
+    public static final byte KEEP_ALIVE_ID = -1;
     
-    public static final CHOKE_ID = 0;
+    public static final byte CHOKE_ID = 0;
     
-    public static final UNCHOKE_ID = 1;
+    public static final byte UNCHOKE_ID = 1;
     
-    public static final INTERESTED_ID = 2;
+    public static final byte INTERESTED_ID = 2;
     
-    public static final NOT_INTERESTED_ID = 3;
+    public static final byte NOT_INTERESTED_ID = 3;
     
-    public static final HAVE_ID = 4;
+    public static final byte HAVE_ID = 4;
     
-    public static final BITFEILD_ID = 5;
+    public static final byte BITFEILD_ID = 5;
     
-    public static final REQUEST_ID = 6;
+    public static final byte REQUEST_ID = 6;
     
-    public static final PIECE_ID = 7;
+    public static final byte PIECE_ID = 7;
     
-    public static final CANCEL_ID = 8;
+    public static final byte CANCEL_ID = 8;
     
-    public static final HANDSHAKE_ID = 9;
+    public static final byte HANDSHAKE_ID = 9;
     
     //create the protocol byte array of a string for the initial handshake message
     
-    public static byte[] PROTOCOL_ID = new byte[] {'B'. 'i', 't', 'T', 'o', 'r', 'r', 'e', 'n', 't', ' ',
+    public static byte[] PROTOCOL_ID = new byte[] {'B', 'i', 't', 'T', 'o', 'r', 'r', 'e', 'n', 't', ' ',
         'p', 'r', 'o', 't', 'o', 'c', 'o', 'l'};
     
     //declare variables used throughout the message objects
@@ -118,7 +119,7 @@ public class Message {
         if( this.id == HAVE_ID){
             System.arraycopy(byteArrayFromInt(havePayload), 0, this.mess, 5, 4);
             
-        }else if( if == REQUEST_ID){
+        }else if( this.id == REQUEST_ID){
             System.arraycopy(byteArrayFromInt(requestIndex), 0, this.mess, 5, 4);
             System.arraycopy(byteArrayFromInt(requestBegin), 0, this.mess, 9, 4);
             System.arraycopy(byteArrayFromInt(requestLength), 0, this.mess, 13, 4);
@@ -215,7 +216,7 @@ public class Message {
         }else if( this.id == REQUEST_ID){
             retString = "Request Message";
         }else if( this.id == HANDSHAKE_ID){
-            System.out.println("Handshake message");
+            retString = "Handshake Message";
             for(int i = 0; i <20 ; i++){
                 System.out.print( this.mess[i]);
             }
@@ -228,9 +229,10 @@ public class Message {
                 System.out.print( peerID[i]);
             }
             System.out.println();
-            return;
+            return retString;
             
         }else if( this.id == PIECE_ID){
+            retString = "Piece Message";
             System.out.println("Piece Message");
             //use the array to int method
             System.out.println("Piece index: " + intFromByteArray(Arrays.copyOfRange(this.mess, 5, 8)));
@@ -239,7 +241,7 @@ public class Message {
             for(int i = 0; i < this.pieceOfFile.length; i++){
                 System.out.print( this.pieceOfFile[i]);
             }
-            return;
+            return retString;
             
         }
         return retString;

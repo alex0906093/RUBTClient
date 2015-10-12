@@ -1,9 +1,10 @@
 import java.util.*;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.net.Socket;
 
 public class Peer implements Runnable{
-	public GiventTools.TorrentInfo tInfo = null;
+	public GivenTools.TorrentInfo tInfo = null;
 	ArrayList<byte[]> pieces = new ArrayList<byte[]>();
 	public int port;
 	public String ipAdd;
@@ -14,7 +15,7 @@ public class Peer implements Runnable{
 	public DataInputStream dInStream = null;
 	public final int timeoutTime = 130000;
 	FileOutputStream fOutStream = null;
-	public final int 16KB = 16384;
+	public static final int KBLIM = 16384;
 	/*
 	 *Constructor for just IP Address and Port Num
 	 */
@@ -26,7 +27,7 @@ public class Peer implements Runnable{
 	/*
 	 *Constructor for peer when establishing a connection and reading/writting
 	 */
-	public Peer(String ipAdd, int port, GiventTools.TorrentInfo tInfo, byte[] peerID){
+	public Peer(String ipAdd, int port, GivenTools.TorrentInfo tInfo, byte[] peerID){
 		//Initialize variables
 		this.ipAdd = ipAdd;
 		this.port = port;
@@ -43,14 +44,14 @@ public class Peer implements Runnable{
 			System.out.println("Connection setup failed");
 		}
 		//set up a handshake
-		if(!(sendHandshake(tInfo.info_hash.array(), peerid))){
+		if(!(sendHandshake(tInfo.info_hash.array(), peerID))){
 			System.out.println("Handshake Failed");
 			return;
 		}
 		//call the download function to write all of the pieces of the torrent to a local file.
 		try{
 			boolean success = download();
-			if(!succeess){
+			if(!success){
 				System.out.println("download Failed!");
 			}
 			else{
@@ -73,17 +74,18 @@ public class Peer implements Runnable{
 		Message handshake = new Message(info_hash, peerid);
 		boolean ret;
 		try{
-			dOutStream.write(handshake.message);
+			dOutStream.write(handshake.mess);
 			dOutStream.flush();
 			socket.setSoTimeout(timeoutTime);
 			byte[] receiveShake = new byte[68];
 			dInStream.readFully(receiveShake);
 			byte[] peerInfoHash = Arrays.copyOfRange(receiveShake, 28, 48);
-			value = Arrays.equals(peerInfoHash, info_hash) ? true : false;
+			ret = Arrays.equals(peerInfoHash, info_hash) ? true : false;
 			return ret;
 		}catch(Exception e){
 			System.out.println("Exception thrown for handshake");
 		}
+		return true;
 	}
 
 	/*
@@ -92,7 +94,7 @@ public class Peer implements Runnable{
 	 *
 	 */
 
-	public boolean download(){
+	public boolean download() throws Exception{
 		Message mainMessage = new Message(1, (byte) 2);
 		Message request = null;
 		byte[] buff = null;
@@ -100,13 +102,13 @@ public class Peer implements Runnable{
 		int lastPiece;
 		int numPieces = 0;
 		int begin = 0;
-		int count = 16KB;
+		int count = KBLIM;
 		int difference;
 
 			for(int i = 0; i < 6; i++){
 				dInStream.readByte();
 			}
-			dOutStream.write(mainMessage.message);
+			dOutStream.write(mainMessage.mess);
 			dOutStream.flush();
 			socket.setSoTimeout(timeoutTime);
 
@@ -127,10 +129,10 @@ public class Peer implements Runnable{
 				while(!gotPiece){
 					if(numPieces + 1 == tInfo.piece_hashes.length){
 						request = new Message(13, (byte) 0);
-						count = (lastPiece < 16KB) ? lastPiece : 16KB;
-						lastPiece -= 16KB;
-						request.setPayload(null, -1, -1, count, begin, numPieces, -1);
-						dOutStream.write(request.message);
+						count = (lastPiece < KBLIM) ? lastPiece : KBLIM;
+						lastPiece -= KBLIM;
+						request.setLoad(-1, -1, null, numPieces, begin, count, -1);
+						dOutStream.write(request.mess);
 						dOutStream.flush();
 						socket.setSoTimeout(timeoutTime);
 						buff = new byte[4];
@@ -155,8 +157,8 @@ public class Peer implements Runnable{
 						begin += count;
 					} else{
 						request = new Message(13, (byte) 6);
-						request.setPayload(null, -1, -1, 16KB, begin, numPieces, -1);
-						dOutStream.write(request.message);
+						request.setLoad(-1, -1, null, numPieces, begin, KBLIM, -1);
+						dOutStream.write(request.mess);
 						dOutStream.flush();
 						socket.setSoTimeout(timeoutTime);
 						buff = new byte[4];
@@ -166,19 +168,19 @@ public class Peer implements Runnable{
 							for(int i = 0; i < 9; i++)
 								dInStream.readByte();
 
-							for(int i = 0; i < 16KB; i++)
-								pieceSub[i] = dInStream.readBytes();
+							for(int i = 0; i < KBLIM; i++)
+								pieceSub[i] = dInStream.readByte();
 							
 						this.pieces.add(pieceSub);
 						fOutStream.write(pieceSub);
 
-							if(begin + 16KB == tInfo.piece_length){
+							if(begin + KBLIM == tInfo.piece_length){
 								numPieces++;
 								begin = 0;
 								gotPiece=true;
 								continue;
 							}	else{
-								begin += 16KB;
+								begin += KBLIM;
 							}
 					}
 
@@ -187,6 +189,9 @@ public class Peer implements Runnable{
 			}
 			return true;
 			
+	}
+	public void run(){
+		System.out.println("Running");
 	}
 
 
