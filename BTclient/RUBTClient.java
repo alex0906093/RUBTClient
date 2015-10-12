@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 public class RUBTClient{
 
     public static String file_destination;
-    public static byte[] peerid = "alexchriskyung".getBytes();
+    public static byte[] peerid = "alexchriskyung123456".getBytes();
     public static byte[] protocol_string = new byte[] { 'B', 'i', 't', 'T',
 			'o', 'r', 'r', 'e', 'n', 't', ' ', 'p', 'r', 'o', 't', 'o', 'c',
 			'o', 'l' };

@@ -73,7 +73,7 @@ public class TrackerResponse{
         this.peers = new ArrayList<Peer>();
         
         for (Object element : (ArrayList<?>) response.get(KEY_PEERS) ){
-                //@SuppressWarning("unchecked");
+		//@SuppressWarning("unchecked");
                 Map<ByteBuffer, Object> peerMap= (Map<ByteBuffer, Object>)element;
                 
             
@@ -83,10 +83,16 @@ public class TrackerResponse{
             }
             int peerPort =((Integer) peerMap.get(KEY_PORT)).intValue();
             String peerIP = objectToStr(peerMap.get(KEY_IP));
+	    String peerID = objectToStr(peerMap.get(KEY_PEER_ID));
             byte[] pid = ((ByteBuffer) peerMap.get(KEY_PEER_ID)).array(); 
             if(objectToStr(peerMap.get(KEY_PEER_ID)).contains("RU")){
-                this.peers.add(new Peer(peerIP, peerPort));
+                    System.out.println("found the peer with RU: " + peerID);
+		    this.peers.add(new Peer(peerIP, peerPort));
             }
+	    else{
+	    	System.out.println(peerID + " Does not have RU in peer ID");
+	    }
+
 
         }
     

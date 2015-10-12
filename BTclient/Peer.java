@@ -32,7 +32,7 @@ public class Peer implements Runnable{
 		this.ipAdd = ipAdd;
 		this.port = port;
 		this.tInfo = tInfo;
-
+		System.out.println("IP Address of peer is " + ipAdd + "opening Socket");
 		//try to establish a connection and open a socket
 		try{
 			socket = new Socket(ipAdd, port);
@@ -59,6 +59,7 @@ public class Peer implements Runnable{
 			}
 		}catch(Exception e){
 			System.out.println("Exception: Could not download file");
+			e.printStackTrace();
 		}
 		try{
 			socket.close();
@@ -104,18 +105,22 @@ public class Peer implements Runnable{
 		int begin = 0;
 		int count = KBLIM;
 		int difference;
-
+		
+		socket.setSoTimeout(timeoutTime);
+			
 			for(int i = 0; i < 6; i++){
+				System.out.println("got to i : " + i); 
 				dInStream.readByte();
 			}
 			dOutStream.write(mainMessage.mess);
 			dOutStream.flush();
 			socket.setSoTimeout(timeoutTime);
-
+			
 			for(int i = 0; i < 5; i++){
 				if(i == 4 && dInStream.readByte() == 1){
 					break;
 				}
+				System.out.println("getting to i : " + i);
 				dInStream.readByte();
 			}
 			difference = tInfo.piece_hashes.length - 1;
@@ -136,8 +141,10 @@ public class Peer implements Runnable{
 						dOutStream.flush();
 						socket.setSoTimeout(timeoutTime);
 						buff = new byte[4];
+							System.out.println("Going into loop");
 							for(int i = 0; i < 4; i++)
 								buff[i] = dInStream.readByte();
+
 						
 						pieceSub = new byte[count];
 					
@@ -162,11 +169,13 @@ public class Peer implements Runnable{
 						dOutStream.flush();
 						socket.setSoTimeout(timeoutTime);
 						buff = new byte[4];
+							System.out.println("Getting into connection");
 							for(int i = 0; i < 4; i++)
 								buff[i] = dInStream.readByte();
-
+							
 							for(int i = 0; i < 9; i++)
 								dInStream.readByte();
+							pieceSub = new byte[KBLIM];
 
 							for(int i = 0; i < KBLIM; i++)
 								pieceSub[i] = dInStream.readByte();
