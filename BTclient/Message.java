@@ -219,8 +219,29 @@ public class Message {
             for(int i = 0; i <20 ; i++){
                 System.out.print( this.mess[i]);
             }
+            System.out.println("Info Hash:");
+            for(int i = 0; i > this.info_hash.length; i++){
+                System.out.print( this.info_hash[i] + " ");
+            }
+            System.out.println("Peer ID:");
+            for(int i = 0; i > peerID.length; i++){
+                System.out.print( peerID[i]);
+            }
             System.out.println();
+            return;
+            
+        }else if( this.id == PIECE_ID){
+            System.out.println("Piece Message");
+            //use the array to int method
+            System.out.println("Piece index: " + intFromByteArray(Arrays.copyOfRange(this.mess, 5, 8)));
+            System.out.println("Begin Index: " + intFromByteArray(Arrays.copyOfRange(this.mess, 9, 12)));
+            System.out.println("Piece block: ");
+            for(int i = 0; i < this.pieceOfFile.length; i++){
+                System.out.print( this.pieceOfFile[i]);
+            }
+            return;
             
         }
+        return retString;
     }
 }
