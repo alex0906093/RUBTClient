@@ -89,21 +89,11 @@ public class RUBTClient{
 
         peers = tResponseDecoded.peers;
         int peerIndex;
-        for(peerIndex = 0; peerIndex < peers.size(); peerIndex++){
-        	if(peers.get(peerIndex).toString().contains("128:6:171:3")){
-        		found=true;
-        		break;
-        	}
-        }
-        String ipAdd = peers.get(peerIndex).ipAdd.replaceAll(":", ".");
-        if(!found){
-        	System.out.println("could not find peer with ID RUBT11!");
-        	return;
-        }
-
         info_hash = tInfo.info_hash.array();
-        Peer peer = new Peer(ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
+        for(peerIndex = 0; peerIndex < peers.size(); peerIndex++){
+		Peer peer = new Peer(peers.get(peerIndex).ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
 	}
+}
     
     public static TrackerResponse decodeTrackerResponse(byte[] tr) throws GivenTools.BencodingException{
     	//System.out.println(tr.toString());
