@@ -130,6 +130,7 @@ public class Peer implements Runnable{
 
 			//set up while loop to see if we have all the pieces
 			while(numPieces != tInfo.piece_hashes.length){
+				System.out.println("number of pieces gotten is : " + numPieces);
 				//set up loop for each piece to download
 				while(!gotPiece){
 					if(numPieces + 1 == tInfo.piece_hashes.length){
@@ -169,7 +170,7 @@ public class Peer implements Runnable{
 						dOutStream.flush();
 						socket.setSoTimeout(timeoutTime);
 						buff = new byte[4];
-							System.out.println("Getting into connection");
+							//System.out.println("Getting into connection");
 							for(int i = 0; i < 4; i++)
 								buff[i] = dInStream.readByte();
 							
@@ -187,6 +188,8 @@ public class Peer implements Runnable{
 								numPieces++;
 								begin = 0;
 								gotPiece=true;
+								float percentage = (float) numPieces / (float) tInfo.piece_hashes.length;
+								System.out.println(percentage * 100 + "% done");
 								continue;
 							}	else{
 								begin += KBLIM;
