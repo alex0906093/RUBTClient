@@ -1,6 +1,8 @@
 import java.util.ArrayList;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.*;
+import java.io.UnsupportedEncodingException;
 
 /*
  *Class to grab repsonse from Bittorrent Tracker
@@ -24,6 +26,9 @@ public class TrackerResponse{
     public final int NUM_PEERS = 33;
     public static final ByteBuffer KEY_FAILURE = ByteBuffer.wrap(new byte[]{'f', 'a', 'i','l','u', 'r', 'e', ' ', 'r', 'e', 'a', 's', 'o', 'n',});
     public static final ByteBuffer KEY_PEERS = ByteBuffer.wrap(new byte[] {'p', 'e', 'e', 'r', 's' });
+    private static final ByteBuffer KEY_IP = ByteBuffer.wrap(new byte[] { 'i','p' });
+    private static final ByteBuffer KEY_PEER_ID = ByteBuffer.wrap(new byte[] {'p', 'e', 'e', 'r', ' ', 'i', 'd' });
+    public static final ByteBuffer KEY_PORT = ByteBuffer.wrap(new byte[] {'p', 'o', 'r', 't'});
     public static final ByteBuffer KEY_INTERVAL = ByteBuffer.wrap(new byte[] {'i', 'n', 't', 'e', 'r', 'v', 'a','l' });
     public static final ByteBuffer KEY_MIN_INTERVAL = ByteBuffer.wrap(new byte[] { 'm', 'i', 'n', ' ', 'i', 'n', 't', 'e', 'r','v', 'a', 'l' });
     public static final ByteBuffer KEY_COMPLETE = ByteBuffer.wrap(new byte[] {'c', 'o', 'm', 'p', 'l', 'e', 't', 'e' });
@@ -63,30 +68,58 @@ public class TrackerResponse{
         }
         //need to figure out how to decode this response map correctly
         //ArrayList<HashMap<ByteBuffer, Object>> encodedPeerList = null;
-        ArrayList peersResponse = (ArrayList) response.get(KEY_PEERS);
+        
+        
         this.peers = new ArrayList<Peer>();
-        for(int i = 0; i < peersResponse.size(); i++){
-            System.out.println(peersResponse.get(i));
-        }
-        /*
-        for (int i = 0; i < NUM_PEERS; i++){
-            try{
-                //read the peer response and add to the list of peers
-                String peerIP = "";
-                peerIP += peersResponse.get() & 0xff;peerIP += ":";
-                peerIP += peersResponse.get() & 0xff;peerIP += ":";
-                peerIP += peersResponse.get() & 0xff;peerIP += ":";
-                peerIP += peersResponse.get() & 0xff;
+        
+        for (Object element : (ArrayList<?>) response.get(KEY_PEERS) ){
+                //@SuppressWarning("unchecked");
+                Map<ByteBuffer, Object> peerMap= (Map<ByteBuffer, Object>)element;
                 
-                int peerPort = peersResponse.get() * 256 + peersResponse.get();
-                this.peers.add(new Peer(peerIP, peerPort));
+            
+            if(!peerMap.containsKey(KEY_PORT) || !peerMap.containsKey(KEY_IP) || !peerMap.containsKey(KEY_PEER_ID)){
+                System.out.println("Missing information about peer, skipping");
+                continue;
             }
-            catch (Exception e){
-                System.out.println("caught exception in TrackerResponse.java");
+            int peerPort =((Integer) peerMap.get(KEY_PORT)).intValue();
+            String peerIP = objectToStr(peerMap.get(KEY_IP));
+            byte[] pid = ((ByteBuffer) peerMap.get(KEY_PEER_ID)).array(); 
+            if(objectToStr(peerMap.get(KEY_PEER_ID)).contains("RU")){
+                this.peers.add(new Peer(peerIP, peerPort));
             }
 
         }
-    */
+    
+
+    }
+        public static String objectToStr(Object o){
+        
+        if(o instanceof Integer){
+            return String.valueOf(o);
+        } else if(o instanceof ByteBuffer){
+            try {
+                return new String(((ByteBuffer) o).array(),"ASCII");
+            } catch (UnsupportedEncodingException e) {
+                return o.toString();
+            }
+        }else if(o instanceof Map<?,?>){
+            
+            String retStr = "";
+            for (Object name: ((Map<?, ?>) o).keySet()){
+                String value = objectToStr(((Map<?, ?>) o).get(name));  
+                retStr += objectToStr(name) + ": " + value + "\n";  
+            } 
+            
+            return retStr;
+        }else if(o instanceof List){
+            
+            String retStr = "";
+            for(Object elem: (List<?>)o){
+                retStr += objectToStr(elem) + "\n";
+            }
+            return retStr;
+        }
+        return o.toString();
     }
     
     
