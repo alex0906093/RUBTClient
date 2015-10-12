@@ -124,7 +124,8 @@ public class Peer implements Runnable{
 				dInStream.readByte();
 			}
 			difference = tInfo.piece_hashes.length - 1;
-			lastPiece = tInfo.file_length - (difference * tInfo.piece_length);
+			//lastPiece = tInfo.file_length - (difference * tInfo.piece_length);
+			lastPiece = tInfo.file_length - (tInfo.piece_length * (tInfo.piece_hashes.length - 1)) - ( (tInfo.piece_length / KBLIM) - 1) * KBLIM;
 			System.out.println("Last piece size is " + lastPiece);
 			System.out.println("piece length is " + tInfo.piece_length);
 			fOutStream = new FileOutputStream(new File(RUBTClient.file_destination));
@@ -136,7 +137,7 @@ public class Peer implements Runnable{
 				//set up loop for each piece to download
 				while(!gotPiece){
 					if(numPieces + 1 == tInfo.piece_hashes.length){
-						request = new Message(13, (byte) 0);
+						request = new Message(13, (byte) 6);
 						count = (lastPiece < KBLIM) ? lastPiece : KBLIM;
 						System.out.println("count is " + count);
 						lastPiece -= KBLIM;
@@ -145,11 +146,11 @@ public class Peer implements Runnable{
 						dOutStream.flush();
 						socket.setSoTimeout(timeoutTime);
 						buff = new byte[4];
-							System.out.println("Going into loop");
+							//System.out.println("Going into loop");
 							int debug = 1;
 							//1
 						for(int i = 0; i < 4; i++){
-							System.out.println("caught in debug " + debug +"at i = " + i );
+							//System.out.println("caught in debug " + debug +" at i = " + i );
 							buff[i] = dInStream.readByte();
 						}
 						
@@ -157,14 +158,14 @@ public class Peer implements Runnable{
 							debug++;
 							//2
 							for(int i = 0; i < 9; i++){
-								System.out.println("caught in debug " + debug +"at i = " + i );
+								//System.out.println("caught in debug " + debug +"at i = " + i );
 								dInStream.readByte();
 							}
 							debug++;
 							//3
 							for(int i =0; i < count; i++){
 								pieceSub[i] = dInStream.readByte();
-								System.out.println("caught in debug " + debug +"at i = " + i );
+								//System.out.println("caught in debug " + debug +"at i = " + i );
 								}
 						this.pieces.add(pieceSub);
 						fOutStream.write(pieceSub);
@@ -175,7 +176,7 @@ public class Peer implements Runnable{
 							}
 						    begin += count;
 					} else{
-						
+						//begin = (numPieces%2) * KBLIM;
 						request = new Message(13, (byte) 6);
 						request.setLoad(-1, -1, null, numPieces, begin, KBLIM, -1);
 						dOutStream.write(request.mess);
