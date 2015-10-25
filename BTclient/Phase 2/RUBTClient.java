@@ -18,7 +18,7 @@ public class RUBTClient{
     public static byte[] protocol_string = new byte[] { 'B', 'i', 't', 'T',
 			'o', 'r', 'r', 'e', 'n', 't', ' ', 'p', 'r', 'o', 't', 'o', 'c',
 			'o', 'l' };
-	public static GivenTools.TorrentInfo tInfo = null;
+	public static TorrentInfo tInfo = null;
 	public static byte[] info_hash = null;
 	public static void main(String[] args){
 		String torrentFN;
@@ -61,18 +61,11 @@ public class RUBTClient{
 
 		}
         try{
-        tInfo = new GivenTools.TorrentInfo(b);
+        tInfo = new TorrentInfo(b);
         System.out.println(tInfo.file_name);
         }catch(GivenTools.BencodingException e){
             System.out.println("Bencoding Exception");
         }
-        /*
-        try{
-            System.out.println(info.announce_url.toString());
-            //HttpClientExample http = new HttpClientExample();
-            //sendGet(info.announce_url);
-        }catch(Exception e){
-        }*/
         try{
         	tResponse = getTrackerResponse(tInfo);
         }
