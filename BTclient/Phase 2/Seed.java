@@ -5,10 +5,17 @@ import java.net.Socket;
 
 public class Seed Implements Runnable{
 	/*GLOBALS*/
-	public static final int KBLIM = 16384;
 
+	public Seed(){
+
+	}
+	public void sendMessage(int pieceIndex, int begin, int blockLength){
+
+
+	}
 	public void run(){
 		System.out.println("Running thread for Seeding");
 	}
 
 }
+

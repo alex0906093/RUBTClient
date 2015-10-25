@@ -55,7 +55,7 @@ public class Message {
         this.mess[0] = (byte) 19;   //put the length of the protocol id in the first spot of the array
         
         //fill the message with the protocol id, the hash info, then the peerid
-	System.arraycopy( PROTOCOL_ID, 0, this.mess, 1, 19);
+	    System.arraycopy( PROTOCOL_ID, 0, this.mess, 1, 19);
         System.arraycopy( info_hash, 0, this.mess, 28, 20);
         System.arraycopy( peerID, 0, this.mess, 48, 20);
         

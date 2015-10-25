@@ -20,10 +20,11 @@ public class RUBTClient{
 			'o', 'l' };
 	public static TorrentInfo tInfo = null;
 	public static byte[] info_hash = null;
-
+    public static MemCheck globalMemory = null;
 
 	public static void main(String[] args){
 		/*Get variables ready*/
+        globalMemory = new MemCheck();
         String torrentFN;
 		String saveFN;
 		TrackerResponse tResponseDecoded = null;
