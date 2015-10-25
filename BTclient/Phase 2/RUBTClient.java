@@ -20,8 +20,11 @@ public class RUBTClient{
 			'o', 'l' };
 	public static TorrentInfo tInfo = null;
 	public static byte[] info_hash = null;
+
+
 	public static void main(String[] args){
-		String torrentFN;
+		/*Get variables ready*/
+        String torrentFN;
 		String saveFN;
 		TrackerResponse tResponseDecoded = null;
 		boolean found = false;
@@ -30,16 +33,17 @@ public class RUBTClient{
 		byte[] tResponse = null;
 		String encodedText = "";
 		byte[] b = null;
+        /*check command line arguments*/
 		if(args.length == 2){
 			torrentFN = args[0];
 			saveFN = args[1];
 			file_destination = saveFN;
-			//System.out.println("torrent file: " + torrentFN + " save file: " + saveFN);
 		}
 		else{
 			System.out.println("Invalid number of command line arguments");
 			return;
 		}
+        /*read torrent file*/
 		BufferedReader reader = null;
 		try{
 			b = Files.readAllBytes(Paths.get(torrentFN));
@@ -60,10 +64,11 @@ public class RUBTClient{
 			}
 
 		}
+        /*send bytes to helper class*/
         try{
-        tInfo = new TorrentInfo(b);
-        System.out.println(tInfo.file_name);
-        }catch(GivenTools.BencodingException e){
+            tInfo = new TorrentInfo(b);
+            System.out.println(tInfo.file_name);
+        }catch(BencodingException e){
             System.out.println("Bencoding Exception");
         }
         try{
@@ -73,6 +78,7 @@ public class RUBTClient{
         	System.out.println("Problem with GET Request, program exiting");
         	return;
         }
+        /*decode the tracker response*/
         try{
         	tResponseDecoded = decodeTrackerResponse(tResponse);
         }catch(Exception e){
@@ -84,15 +90,15 @@ public class RUBTClient{
         int peerIndex;
         info_hash = tInfo.info_hash.array();
         for(peerIndex = 0; peerIndex < peers.size(); peerIndex++){
-		Peer peer = new Peer(peers.get(peerIndex).ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
-	}
-}
+		  Peer peer = new Peer(peers.get(peerIndex).ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
+	   }
+    }
     
-    public static TrackerResponse decodeTrackerResponse(byte[] tr) throws GivenTools.BencodingException{
-    	//System.out.println(tr.toString());
+    public static TrackerResponse decodeTrackerResponse(byte[] tr) throws BencodingException{
     	Object o = GivenTools.Bencoder2.decode(tr);
     	HashMap<ByteBuffer, Object> response = (HashMap<ByteBuffer, Object>) o;
     	TrackerResponse tr2 = null;
+        //call TrackerResponse.java decode the information
     	try{
     		tr2 = new TrackerResponse(response);
     	}catch(Exception e){
@@ -105,7 +111,7 @@ public class RUBTClient{
     	return tr2;
     }
 
-    public static byte[] getTrackerResponse(GivenTools.TorrentInfo ti) throws UnknownHostException, IOException{
+    public static byte[] getTrackerResponse(TorrentInfo ti) throws UnknownHostException, IOException{
     	String info_hash = toHexString(ti.info_hash.array());
     	String peer_id = toHexString("alexchriskyung".getBytes());
     	String port = "" + 6883;
@@ -113,7 +119,6 @@ public class RUBTClient{
     	String uploaded = "" + 0;
     	String left = "" + ti.file_length;
     	String announce = ti.announce_url.toString();
-
     	String aURL= announce.toString();
     	aURL += "?" + "info_hash" + "=" + info_hash + "&" + "peer_id" + "=" + peer_id + "&" + "port" + "=" + port + "&" + "uploaded" + "="
     	+ uploaded + "&" + "downloaded" + "=" + downloaded + "&" + "left" + "=" + left;
@@ -125,14 +130,6 @@ public class RUBTClient{
     	dInStream.readFully(retBytes);
     	dInStream.close();
     	return retBytes;
-    }
-
-    public static void sendGet(URL url) throws Exception{
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
-        int responseCode = con.getResponseCode();
-        System.out.println("\nSent GET Request, Response Code: " + responseCode);
-       
     }
     
     public static String toHexString(byte[] bytes) {

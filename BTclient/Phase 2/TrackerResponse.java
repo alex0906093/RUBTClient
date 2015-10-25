@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+llimport java.util.ArrayList;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.*;
@@ -71,29 +71,20 @@ public class TrackerResponse{
         
         
         this.peers = new ArrayList<Peer>();
-        
+        //iterate through responses, get peers
         for (Object element : (ArrayList<?>) response.get(KEY_PEERS) ){
 		//@SuppressWarning("unchecked");
-                Map<ByteBuffer, Object> peerMap= (Map<ByteBuffer, Object>)element;
+            Map<ByteBuffer, Object> peerMap= (Map<ByteBuffer, Object>)element;
                 
-            
             if(!peerMap.containsKey(KEY_PORT) || !peerMap.containsKey(KEY_IP) || !peerMap.containsKey(KEY_PEER_ID)){
                 System.out.println("Missing information about peer, skipping");
                 continue;
             }
             int peerPort =((Integer) peerMap.get(KEY_PORT)).intValue();
             String peerIP = objectToStr(peerMap.get(KEY_IP));
-	    String peerID = objectToStr(peerMap.get(KEY_PEER_ID));
+	        String peerID = objectToStr(peerMap.get(KEY_PEER_ID));
             byte[] pid = ((ByteBuffer) peerMap.get(KEY_PEER_ID)).array(); 
-            if(objectToStr(peerMap.get(KEY_PEER_ID)).contains("RU")){
-                    System.out.println("found the peer with RU: " + peerID);
 		    this.peers.add(new Peer(peerIP, peerPort));
-            }
-	    else{
-	    	System.out.println(peerID + " Does not have RU in peer ID");
-	    }
-
-
         }
     
 
