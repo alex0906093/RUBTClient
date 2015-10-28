@@ -12,8 +12,11 @@ import java.net.Socket;
 public class MemCheck{
 	ArrayList<byte[]> pieces = new ArrayList<byte[]>();
 	private Object memLock = new Object();
-	public MemCheck(){
-		
+	private Object indexLock = new Object();
+	private int nextIndex = 0;
+	public int numPieces;
+	public MemCheck(int numPieces){
+		this.numPieces = numPieces;
 	}
 	public void addPiece(byte[] b, int index){
 		synchronized(memLock){
@@ -33,7 +36,18 @@ public class MemCheck{
 	public byte[] getPiece(int index){
 		synchronized(memLock){
 			return pieces.get(i);	
+		}	
+	}
+	public int nextPieceIndex(){
+		synchronized(indexLock){
+				//numPieces or numPieces + 1?
+				if(nextIndex == numPieces)
+					return -1;
+
+				int tmp = nextIndex;
+				nextIndex++;
+				return tmp;
 		}
-		
+
 	} 
 }

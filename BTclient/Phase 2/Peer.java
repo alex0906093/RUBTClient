@@ -16,6 +16,10 @@ public class Peer {
 	public final int timeoutTime = 130000;
 	FileOutputStream fOutStream = null;
 	public static final int KBLIM = 16384;
+	private int am_choking = 1;
+	private int am_interested = 0;
+	private int peer_choking = 1;
+	private int peer_interested = 0;
 	/*
 	 *Constructor for just IP Address and Port Num
 	 */

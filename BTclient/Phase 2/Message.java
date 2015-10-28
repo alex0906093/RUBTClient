@@ -245,4 +245,56 @@ public class Message {
         }
         return retString;
     }
+    //have message, not sure what to do with this yet
+    public static class HaveMessage extends Message{
+        private int pieceIndex;
+        public HaveMessage(int index){
+            super(5, HAVE_ID);
+            this.pieceIndex = index;
+        }
+        public int getPieceIndex(){
+            return pieceIndex;
+        }
+    }
+    //piece message to send to user, c
+    public static class PieceMessage extends Message{
+        private int pieceIndex;
+        private int begin;
+        private byte[] data;
+        public PieceMessage(int pieceIndex, int begin, byte[] data){
+            super(data.length + 9,PIECE_ID);
+            this.pieceIndex=pieceIndex;
+            this.begin=begin;
+            this.data=data;
+        }
+        public int getPieceIndex(){
+            return pieceIndex;
+        }
+        public int getBegin(){
+            return begin;
+        }
+        public byte[] getData(){
+            return data;
+        }
+    }
+    public static class RequestMessage extends Message{
+        private int pieceIndex;
+        private int begin;
+        private int blockLength;
+        public RequestMessage(int pieceIndex, int begin, int blockLength){
+            super(13, REQUEST_ID);
+            this.pieceIndex=pieceIndex;
+            this.begin=begin;
+            this.blockLength=blockLength;
+        }
+        public int getPieceIndex(){
+            return pieceIndex;
+        }
+        public int getBegin(){
+            return begin;
+        }
+        public int getBlockLength(){
+            return blockLength;
+        }
+    }
 }
