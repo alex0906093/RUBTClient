@@ -40,6 +40,8 @@ public class MemCheck{
 			//piece is finished
 			if(p.haveAllBlocks == 0){
 				gotten[index] = true;
+			}else{
+				getting[index] = false;
 			}
 	}
 	//check if we have the piece
@@ -64,7 +66,10 @@ public class MemCheck{
 		synchronized(indexLock){
 				for(int i = 0; i < numPieces; i++){
 					if(!gotten[i]){
+						if(!getting[i]){
+							getting[i] = true;
 							return i;
+							}
 						}
 					}
 				}
