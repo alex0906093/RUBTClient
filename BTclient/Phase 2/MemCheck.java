@@ -10,7 +10,7 @@ import java.net.Socket;
  */
 
 public class MemCheck{
-	<ArrayListbyte[] pieces = new byte[tInfo.length];
+	ArrayList<Piece> pieces = new ArrayList<Piece>();
 	private Object memLock = new Object();
 	private Object indexLock = new Object();
 	private int nextIndex = 0;
@@ -38,7 +38,7 @@ public class MemCheck{
 		synchronized(memLock){
 			//starting position of the piece
 			int pieceStart = index * tInfo.piece_length;
-			int position = pieceStart + begin ;
+			int position = pieceStart + begin;
 			System.arraycopy(b,0,pieces,position,b.length)
 		}
 	}
