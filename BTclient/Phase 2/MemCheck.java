@@ -32,45 +32,40 @@ public class MemCheck{
 		gotten = new boolean[numPieces];
 		getting = new boolean[numPieces];
 	}
-
-	//add piece to our byte array, VERIFY BEFORE CALLING
-	public void addPiece(byte[] b, int begin,int index){
-		synchronized(memLock){
+	//add block to piece, keep synchronization in tact
+	public void addBlock(byte[] b, int begin,int index){
 			//starting position of the piece
-			int pieceStart = index * tInfo.piece_length;
-			int position = pieceStart + begin;
-			System.arraycopy(b,0,pieces,position,b.length)
-		}
+			Piece p = pieces.get(index);
+			p.writeBlock(b, begin)
+			//piece is finished
+			if(p.haveAllBlocks == 0){
+				gotten[index] = true;
+			}
 	}
-
+	//check if we have the piece
 	public boolean havePiece(int index){
-		synchronized(memLock){
-			if(pieces[index] == 0){
-				return false;
-			}else{
-				return true;
+		synchronized(indexLock){
+			if(gotten[index]){
+				return true
+			}
+			else{
+				return false
 			}
 		}
 	}
+
+	//only call after havePiece
 	public byte[] getPiece(int index, int length){
-		synchronized(memLock){
-			byte[length] p;
-			for(int i = index; i < length; i++){
-				p[i] = pieces[i];
-			}	
-			return p;
-		}	
+			return pieces.get(index).getBytes();	
 	}
+
+	//Method to give an incomplete piece to a thread so it can try to get a block
 	public int nextPieceIndex(){
 		synchronized(indexLock){
-				//numPieces or numPieces + 1?
 				for(int i = 0; i < numPieces; i++){
 					if(!gotten[i]){
-						if(!getting[i]){
-							getting[i] = true;
 							return i;
 						}
-
 					}
 				}
 				//Check if we have all of the pieces already, if so return -1 to end program
@@ -88,7 +83,5 @@ public class MemCheck{
 		}
 
 	}
-	public int gaveUpOnPiece(){
 
-	} 
 }
