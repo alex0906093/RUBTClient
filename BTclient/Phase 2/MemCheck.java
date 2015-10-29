@@ -10,44 +10,85 @@ import java.net.Socket;
  */
 
 public class MemCheck{
-	ArrayList<byte[]> pieces = new ArrayList<byte[]>();
+	<ArrayListbyte[] pieces = new byte[tInfo.length];
 	private Object memLock = new Object();
 	private Object indexLock = new Object();
 	private int nextIndex = 0;
 	public int numPieces;
-	public MemCheck(int numPieces){
-		this.numPieces = numPieces;
+	boolean[] gotten;
+	boolean[] getting;
+	TorrentInfo tInfo;
+	//constructor
+	public MemCheck(TorrentInfo tInfo){
+		this.tInfo = tInfo;
+		pieces();
 	}
-	public void addPiece(byte[] b, int index){
+	//set global memory appropriately
+	private void pieces(){
+		int lastByteSize = tInfo.length % tInfo.piece_length;
+		int tmp = tInfo.length - lastByteSize;
+		numPieces = tmp/tInfo.piece_length;
+		numPieces++; 
+		gotten = new boolean[numPieces];
+		getting = new boolean[numPieces];
+	}
+
+	//add piece to our byte array, VERIFY BEFORE CALLING
+	public void addPiece(byte[] b, int begin,int index){
 		synchronized(memLock){
-			pieces.add(index, b);
+			//starting position of the piece
+			int pieceStart = index * tInfo.piece_length;
+			int position = pieceStart + begin ;
+			System.arraycopy(b,0,pieces,position,b.length)
 		}
 	}
 
 	public boolean havePiece(int index){
 		synchronized(memLock){
-			if(pieces.isEmpty() || pieces.size() < index || pieces.get(index) = null){
+			if(pieces[index] == 0){
 				return false;
 			}else{
 				return true;
 			}
 		}
 	}
-	public byte[] getPiece(int index){
+	public byte[] getPiece(int index, int length){
 		synchronized(memLock){
-			return pieces.get(i);	
+			byte[length] p;
+			for(int i = index; i < length; i++){
+				p[i] = pieces[i];
+			}	
+			return p;
 		}	
 	}
 	public int nextPieceIndex(){
 		synchronized(indexLock){
 				//numPieces or numPieces + 1?
-				if(nextIndex == numPieces)
-					return -1;
+				for(int i = 0; i < numPieces; i++){
+					if(!gotten[i]){
+						if(!getting[i]){
+							getting[i] = true;
+							return i;
+						}
 
-				int tmp = nextIndex;
-				nextIndex++;
-				return tmp;
+					}
+				}
+				//Check if we have all of the pieces already, if so return -1 to end program
+				int check;
+				for(int j = 0; j < numPieces; j++){
+					if(gotten[i]){
+						check++
+					}
+				}
+				if(check == numPieces){
+					return -1;
+				}
+				//tell the thread to sleep and check again a little later
+				return -2;
 		}
+
+	}
+	public int gaveUpOnPiece(){
 
 	} 
 }

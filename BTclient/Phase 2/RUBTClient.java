@@ -24,7 +24,7 @@ public class RUBTClient{
 
 	public static void main(String[] args){
 		/*Get variables ready*/
-        globalMemory = new MemCheck();
+        
         String torrentFN;
 		String saveFN;
 		TrackerResponse tResponseDecoded = null;
@@ -68,6 +68,7 @@ public class RUBTClient{
         /*send bytes to helper class*/
         try{
             tInfo = new TorrentInfo(b);
+            globalMemory = new MemCheck(tInfo);
             System.out.println(tInfo.file_name);
         }catch(BencodingException e){
             System.out.println("Bencoding Exception");

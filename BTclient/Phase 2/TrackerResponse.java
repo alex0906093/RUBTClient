@@ -66,9 +66,6 @@ public class TrackerResponse{
             System.out.println("Warning: no min interval, setting to zero");
             this.minInterval = 0;
         }
-        //need to figure out how to decode this response map correctly
-        //ArrayList<HashMap<ByteBuffer, Object>> encodedPeerList = null;
-        
         
         this.peers = new ArrayList<Peer>();
         //iterate through responses, get peers

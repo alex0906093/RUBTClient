@@ -13,7 +13,6 @@ public class Seed Implements Runnable{
 		if(RUBTClient.havePiece(pieceIndex)){
 			byte[] data = RUBTClient.getPiece(pieceIndex);
 			PieceMessage sendMessage = new PieceMessage(pieceIndex, begin, data);
-			
 		}
 
 
