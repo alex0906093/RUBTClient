@@ -21,7 +21,7 @@ public class RUBTClient{
 	public static TorrentInfo tInfo = null;
 	public static byte[] info_hash = null;
     public static MemCheck globalMemory = null;
-
+    public static final int PEER_LIMIT = 5;
 	public static void main(String[] args){
 		/*Get variables ready*/
         
@@ -91,9 +91,31 @@ public class RUBTClient{
         peers = tResponseDecoded.peers;
         int peerIndex;
         info_hash = tInfo.info_hash.array();
-        for(peerIndex = 0; peerIndex < peers.size(); peerIndex++){
-		  Peer peer = new Peer(peers.get(peerIndex).ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
-	   }
+        if(peers.size() < 15){
+            for(peerIndex = 0; peerIndex < peers.size(); peerIndex++){
+		      Peer peer = new Peer(peers.get(peerIndex).ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
+	       }
+        }else{
+            for(peerIndex = 0; peerIndex < 15; peerIndex++){
+              Peer peer = new Peer(peers.get(peerIndex).ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
+              Thread thread = new Thread(peer);
+              thread.start();
+           }
+        }
+        while(!globalMemory.isFinished){
+            try {Thread.sleep(1000)
+
+            }catch(InteruptedException ex){
+                Thread.currentThread.interupt();
+            }
+        }
+        ArrayList<Piece> finalP = globalMemory.pieces;
+        FileOutputStream fOutStream = new FileOutputStream(new File(file_destination));
+        for(int i = 0; i < globalMemory.numPieces; i++){
+            Piece f = finalP.get(i);
+            fOutStream.write(f.getBytes());
+        }
+
     }
     
     public static TrackerResponse decodeTrackerResponse(byte[] tr) throws BencodingException{
@@ -115,7 +137,7 @@ public class RUBTClient{
 
     public static byte[] getTrackerResponse(TorrentInfo ti) throws UnknownHostException, IOException{
     	String info_hash = toHexString(ti.info_hash.array());
-    	String peer_id = toHexString("alexchriskyung".getBytes());
+    	String peer_id = toHexString("alexchriskyung123456".getBytes());
     	String port = "" + 6883;
     	String downloaded = "" + 0;
     	String uploaded = "" + 0;

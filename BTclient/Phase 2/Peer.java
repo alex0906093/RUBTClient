@@ -116,19 +116,30 @@ public class Peer implements runnable{
 		//because nextPieceIndex returns -1 if we have all of the pieces
 		while(nextMessage != -1){
 			int interest = 1;
-				if(firstMess)){
-					dOutStream.writeInt(interest);
-					dOutStream.writeByte(INTERESTED_ID);
-					dOutStream.flush();
-					firstMess = false;
-				}
+				
+			dOutStream.writeInt(interest);
+			dOutStream.writeByte(INTERESTED_ID);
+			dOutStream.flush();
+			firstMess = false;
+				
 			int messLen = dInStream.readInt();
 			int id = dInStream.readByte();
 
 		switch(id){
-			case CHOKE_ID:{
-				if(peer_choking == 1){
+			case KEEP_ALIVE_ID:{
+				if(gMem.isFinished){
+					break;
+				}else{
 					continue;
+				}
+			}
+			case CHOKE_ID:{//we're being choked
+				if(peer_choking == 1){
+					if(gMem.isFinished){
+						break;
+					}else{
+						continue;
+					}
 				}else{
 					peer_choking = 1;
 					continue;
@@ -140,6 +151,7 @@ public class Peer implements runnable{
 			}//nothing to do here yet
 			case INTERESTED_ID:{
 				peer_interested = 1;
+				sendSomeHaves();
 				continue;
 			}
 			case HAVE_ID:{//They have a piece
@@ -149,31 +161,7 @@ public class Peer implements runnable{
 						continue
 					}else{
 						//we want it, send request messages 
-						Piece p = gMem.getPiece(pIndex);
-						int i = 0;
-						if(p.numBlocks == 0){
-							RequestMessage rm = new RequestMessage(pIndex, 0, p.blockSize);
-							dOutStream.writeInt(13);
-							dOutStream.writeByte(REQUEST_ID);
-							dOutStream.writeInt(pIndex);
-							dOutStream.writeInt(0);
-							dOutStream.writeInt(p.blockSize);
-							dOutStream.flush();
-						}else{
-						int mMade = 0;
-							//request the block from this peer
-							while(mMade < p.numBlocks){
-								int begin = mMade * p.blockSize;
-								RequestMessage rm = new RequestMessage(pIndex, begin, p.blockSize);
-								dOutStream.writeInt(13);
-								dOutStream.writeByte(REQUEST_ID);
-								dOutStream.writeInt(pIndex);
-								dOutStream.writeInt(begin);
-								dOutStream.writeInt(p.blockSize);
-								dOutStream.flush();
-								mMade++;
-							}
-						}
+						sendRequests(pIndex);
 					}
 
 			}case BITFEILD_ID:
@@ -210,14 +198,74 @@ public class Peer implements runnable{
 					}
 				}
 			}
+			//for the sake of efficiency
+			nextMessage = gMem.nextPieceIndex();
+			if(nextMessage > -1){
+				sendRequests(nextMessage);
+			}
+		}
+	}
+	public void sendRequests(int pIndex){
+		Piece p = gMem.getPiece(pIndex);
+		int i = 0;
+		if(p.numBlocks == 0){
+			RequestMessage rm = new RequestMessage(pIndex, 0, p.blockSize);
+			dOutStream.writeInt(13);
+			dOutStream.writeByte(REQUEST_ID);
+			dOutStream.writeInt(pIndex);
+			dOutStream.writeInt(0);
+			dOutStream.writeInt(p.blockSize);
+			dOutStream.flush();
+		}else{
+			int mMade = 0;
+			//request the block from this peer
+			while(mMade < p.numBlocks){
+				int begin = mMade * p.blockSize;
+				RequestMessage rm = new RequestMessage(pIndex, begin, p.blockSize);
+				dOutStream.writeInt(13);
+				dOutStream.writeByte(REQUEST_ID);
+				dOutStream.writeInt(pIndex);
+				dOutStream.writeInt(begin);
+				dOutStream.writeInt(p.blockSize);
+				dOutStream.flush();
+				mMade++;
+			}
+		}		
+	}
+	public void sendSomeHaves(){
+		if(gMem.numPiecesGotten == 0){
+			//send a keep alive message
+			int k = 0;
+			dOutStream.writeInt(k);
+			dOutStream.flush();
+		}else{
+			int haveLim = 0;
+			for(int i = 0; i < pieces.size(); i++){
+				if(haveLim == 10){
+					break;
+				}
+				if(pieces.get(i).verified){
+					len = 5;
+					dOutStream.writeInt(len);
+					dOutStream.writeByte(HAVE_ID);
+					dOutStream.writeInt(i);
+					dOutStream.flush();
+					haveLim++;
+				}
+			}
 		}
 	}
 	//for client 132, it will send a have message once we have blocks
 	public void sendHave(){
 		while(gMem.numPiecesGotten == 0){
-			Thread.sleep(1000)
+			try {
+				Thread.sleep(1000)
+            }catch(InteruptedException ex){
+                Thread.currentThread.interupt();
+            }
 		}
 		int len;
+		while(!gMem.isFinished){
 		for(int i = 0; i < pieces.size(); i++){
 			if(pieces.get(i).verified){
 				len = 5;
@@ -237,10 +285,14 @@ public class Peer implements runnable{
 			if(p.verified){
 				seed.sendPiece(this, pieceIndex);
 				//dont want to waste too much time seeding
-				Thread.sleep(1000);
-			}
-		} 
-
+			try {
+				Thread.sleep(1000)
+            }catch(InteruptedException ex){
+                Thread.currentThread.interupt();
+            }
+				}
+			} 
+		}
 	}
 	public void closeCon() throws Exception{
 		socket.close();

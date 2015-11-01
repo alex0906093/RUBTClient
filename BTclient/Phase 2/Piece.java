@@ -40,7 +40,7 @@ public class Piece{
 			if(rawBytes[begin] == 0){
 				return;
 			}
-		System.arraycopy(b,0,rawBytes,begin,b.length);
+		System.arraycopy(b,0,this.rawBytes,begin,b.length);
 		}
 	}
 	public byte[] getBytes(){

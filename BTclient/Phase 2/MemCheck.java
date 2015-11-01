@@ -19,20 +19,23 @@ public class MemCheck{
 	public boolean[] getting;
 	public TorrentInfo tInfo;
 	public int numPiecesGotten;
+	public boolean isFinished;
+	int openPeers = 0;
 	//constructor
 	public MemCheck(TorrentInfo tInfo){
 		this.tInfo = tInfo;
 		numPiecesGotten = 0;
-		pieces();
+		isFinished = false;
+		pieces_make();
 	}
 	//set global memory appropriately
-	private void pieces(){
+	private void pieces_make(){
 		int lastByteSize = tInfo.length % tInfo.piece_length;
 		int tmp = tInfo.length - lastByteSize;
-		numPieces = tmp/tInfo.piece_length;
-		numPieces++; 
-		gotten = new boolean[numPieces];
-		getting = new boolean[numPieces];
+		this.numPieces = tmp/tInfo.piece_length;
+		this.numPieces++; 
+		this.gotten = new boolean[numPieces];
+		this.getting = new boolean[numPieces];
 	}
 	//add block to piece, keep synchronization in tact
 	public void addBlock(byte[] b, int begin,int index){
@@ -72,21 +75,19 @@ public class MemCheck{
 		synchronized(indexLock){
 				for(int i = 0; i < numPieces; i++){
 					if(!gotten[i]){
-						if(!getting[i]){
-							getting[i] = true;
 							return i;
-							}
 						}
 					}
 				}
 				//Check if we have all of the pieces already, if so return -1 to end program
-				int check;
+				int check = 0;
 				for(int j = 0; j < numPieces; j++){
 					if(gotten[i]){
-						check++
+						check++;
 					}
 				}
 				if(check == numPieces){
+					isFinished = true;
 					return -1;
 				}
 				//tell the thread to sleep and check again a little later
