@@ -10,17 +10,19 @@ import java.net.Socket;
  */
 
 public class MemCheck{
-	ArrayList<Piece> pieces = new ArrayList<Piece>();
+	public ArrayList<Piece> pieces = new ArrayList<Piece>();
 	private Object memLock = new Object();
 	private Object indexLock = new Object();
 	private int nextIndex = 0;
 	public int numPieces;
-	boolean[] gotten;
-	boolean[] getting;
-	TorrentInfo tInfo;
+	public boolean[] gotten;
+	public boolean[] getting;
+	public TorrentInfo tInfo;
+	public int numPiecesGotten;
 	//constructor
 	public MemCheck(TorrentInfo tInfo){
 		this.tInfo = tInfo;
+		numPiecesGotten = 0;
 		pieces();
 	}
 	//set global memory appropriately
@@ -56,9 +58,13 @@ public class MemCheck{
 		}
 	}
 
-	//only call after havePiece
-	public byte[] getPiece(int index, int length){
+	/*
+	public byte[] getPieceBytes(int index){
 			return pieces.get(index).getBytes();	
+	}
+	*/
+	public Piece getPiece(int index){
+		return pieces.get(index);
 	}
 
 	//Method to give an incomplete piece to a thread so it can try to get a block

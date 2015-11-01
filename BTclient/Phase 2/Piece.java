@@ -13,11 +13,13 @@ public class Piece{
 	public int[] blocksGottenIndex;
 	public int numBlocks;
 	public Verify verify;
+	public boolean verified;
 	
 	public Piece(int blockSize, int pieceSize, int pieceIndex){
 		synchronized(this){
 		this.rawBytes = new byte[pieceSize];
 		this.numBlocksGotten = 0;
+		this.verified = false;
 		this.blockSize = blockSize;
 		this.pieceSize = pieceSize;
 		this.numBlocks = pieceSize/blockSize;
@@ -35,6 +37,9 @@ public class Piece{
 
 	public void writeBlock(byte[] b, int begin){
 		synchronized(this){
+			if(rawBytes[begin] == 0){
+				return;
+			}
 		System.arraycopy(b,0,rawBytes,begin,b.length);
 		}
 	}
@@ -73,6 +78,8 @@ public class Piece{
 				reset();
 				return -1;
 			}else{
+				verified = true;
+				RUBTClient.globalMemory.numPiecesGotten++;
 				return 1;
 			}
 		}
