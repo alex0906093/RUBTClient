@@ -5,7 +5,7 @@ import java.util.Arrays;
 public class Verify{
 	TorrentInfo t;
 	
-	public Verify(TorrentInfo t;){
+	public Verify(TorrentInfo t){
 		this.t = t;
 	}
 	

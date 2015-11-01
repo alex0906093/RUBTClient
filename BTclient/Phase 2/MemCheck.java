@@ -30,8 +30,8 @@ public class MemCheck{
 	}
 	//set global memory appropriately
 	private void pieces_make(){
-		int lastByteSize = tInfo.length % tInfo.piece_length;
-		int tmp = tInfo.length - lastByteSize;
+		int lastByteSize = tInfo.file_length % tInfo.piece_length;
+		int tmp = tInfo.file_length - lastByteSize;
 		this.numPieces = tmp/tInfo.piece_length;
 		this.numPieces++; 
 		this.gotten = new boolean[numPieces];
@@ -41,9 +41,9 @@ public class MemCheck{
 	public void addBlock(byte[] b, int begin,int index){
 			//starting position of the piece
 			Piece p = pieces.get(index);
-			p.writeBlock(b, begin)
+			p.writeBlock(b, begin);
 			//piece is finished
-			if(p.haveAllBlocks == 0){
+			if(p.haveAllBlocks() == 0){
 				gotten[index] = true;
 			}else{
 				getting[index] = false;
@@ -53,10 +53,10 @@ public class MemCheck{
 	public boolean havePiece(int index){
 		synchronized(indexLock){
 			if(gotten[index]){
-				return true
+				return true;
 			}
 			else{
-				return false
+				return false;
 			}
 		}
 	}
@@ -82,7 +82,7 @@ public class MemCheck{
 				//Check if we have all of the pieces already, if so return -1 to end program
 				int check = 0;
 				for(int j = 0; j < numPieces; j++){
-					if(gotten[i]){
+					if(gotten[j]){
 						check++;
 					}
 				}
@@ -96,4 +96,3 @@ public class MemCheck{
 
 	}
 
-}

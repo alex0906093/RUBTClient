@@ -3,7 +3,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.net.Socket;
 
-public class Seed Implements Runnable{
+public class Seed implements Runnable{
 	/*GLOBALS*/
 	MemCheck gMem = null;
 	public static final byte PIECE_ID = 7;
@@ -11,7 +11,7 @@ public class Seed Implements Runnable{
 		this.gMem = RUBTClient.globalMemory;
 	}
 	public void sendPiece(Peer p, int pieceIndex){
-		Piece piece = gMem.getPiece(pieceIndex);
+		Piece piece = RUBTClient.globalMemory.getPiece(pieceIndex);
 		int bLength = piece.blockSize;
 		byte[] rawbytes = piece.getBytes();
 		int pmsSent = 0;
@@ -26,11 +26,11 @@ public class Seed Implements Runnable{
 		}
 		else{
 			//send a series of piece messages to send the complete piece to the peer
-			while(pmsSent < pieces.numBlocks){
-				int begin = pmsSent * pieces.blockSize;
-				byte[] data = new byte[pieces.blockSize];
+			while(pmsSent < piece.numBlocks){
+				int begin = pmsSent * piece.blockSize;
+				byte[] data = new byte[piece.blockSize];
 				System.arraycopy(pieceIndex,begin,data,0,piece.blockSize);
-				PieceMessage pm = new PieceMessage(pieceIndex,begin,data);
+				Message.PieceMessage pm = new Message.PieceMessage(pieceIndex,begin,data);
 				p.dOutStream.writeInt(pm.length);
 				p.dOutStream.writeByte(PIECE_ID);
 				p.dOutStream.writeInt(pm.getBegin());

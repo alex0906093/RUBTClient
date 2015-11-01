@@ -2,11 +2,11 @@ import java.util.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.net.Socket;
+import java.lang.*;
 
-public class Peer implements runnable{
+public class Peer implements Runnable{
 	public TorrentInfo tInfo = null;
 	ArrayList<byte[]> pieces = null;
-	public MemCheck gMem;
 	public int port;
 	public String ipAdd;
 	public Socket socket = null;
@@ -43,7 +43,7 @@ public class Peer implements runnable{
     public static final byte CANCEL_ID = 8;
     
     public static final byte HANDSHAKE_ID = 9;
-	public final int timeoutTime = 130000;
+
 	public int pSize;
 	public Seed seed;
 	/*
@@ -105,9 +105,9 @@ public class Peer implements runnable{
 	 */
 	public void run(){
 		int nextMessage = 0;
-		gMem = RUBTClient.globalMemory;
-		pieces = gMem.pieces;
-		nextMessage = gMem.nextPieceIndex();
+		RUBTClient.globalMemory = RUBTClient.globalMemory;
+		
+		nextMessage = RUBTClient.globalMemory.nextPieceIndex();
 		boolean firstMess = true;
 		//seed checker IP Address
 		if(ipAdd.equals("128.6.171.132")){
@@ -127,7 +127,7 @@ public class Peer implements runnable{
 
 		switch(id){
 			case KEEP_ALIVE_ID:{
-				if(gMem.isFinished){
+				if(RUBTClient.globalMemory.isFinished){
 					break;
 				}else{
 					continue;
@@ -135,7 +135,7 @@ public class Peer implements runnable{
 			}
 			case CHOKE_ID:{//we're being choked
 				if(peer_choking == 1){
-					if(gMem.isFinished){
+					if(RUBTClient.globalMemory.isFinished){
 						break;
 					}else{
 						continue;
@@ -157,8 +157,8 @@ public class Peer implements runnable{
 			case HAVE_ID:{//They have a piece
 					//see if we want it
 					int pIndex = dInStream.readInt();
-					if(gMem.havePiece(pIndex) || gMem.getting[pIndex]){
-						continue
+					if(RUBTClient.globalMemory.havePiece(pIndex) || RUBTClient.globalMemory.getting[pIndex]){
+						continue;
 					}else{
 						//we want it, send request messages 
 						sendRequests(pIndex);
@@ -172,7 +172,7 @@ public class Peer implements runnable{
 					int blockLength = dInStream.readInt();
 				
 				//check if we have the piece, if so send it.
-				if(gMem.havePiece(pieceIndex)){
+				if(RUBTClient.globalMemory.havePiece(pieceIndex)){
 					seed.sendPiece(this, pieceIndex);
 				}else{//not sure for now if I don't have the piece
 					continue;
@@ -182,16 +182,16 @@ public class Peer implements runnable{
 					int lengthOfBlock = messLen - 9;
 					int pieceIndex = dInStream.readInt();
 					int begin = dInStream.readInt();
-					byte[] block new byte[lengthOfBlock];
+					byte[] block = new byte[lengthOfBlock];
 					dInStream.readFully(block);
-					Piece gp = pieces.get(pieceIndex);
+					Piece gp = RUBTClient.globalMemory.pieces.get(pieceIndex);
 					gp.writeBlock(block, begin);
 					int c1 = gp.haveAllBlocks();
 					if(c1 == 0){
 						continue;
 					}else if(c1 == 1){
-						gMem.gotten[pieceIndex] = true;
-						nextMessage = gMem.nextPieceIndex();
+						RUBTClient.globalMemory.gotten[pieceIndex] = true;
+						nextMessage = RUBTClient.globalMemory.nextPieceIndex();
 					}else{
 						System.out.println("Problem with piece " + pieceIndex + "will try to fetch again");
 						continue;
@@ -199,17 +199,17 @@ public class Peer implements runnable{
 				}
 			}
 			//for the sake of efficiency
-			nextMessage = gMem.nextPieceIndex();
+			nextMessage = RUBTClient.globalMemory.nextPieceIndex();
 			if(nextMessage > -1){
 				sendRequests(nextMessage);
 			}
 		}
 	}
 	public void sendRequests(int pIndex){
-		Piece p = gMem.getPiece(pIndex);
+		Piece p = RUBTClient.globalMemory.getPiece(pIndex);
 		int i = 0;
 		if(p.numBlocks == 0){
-			RequestMessage rm = new RequestMessage(pIndex, 0, p.blockSize);
+			Message.RequestMessage rm = new Message.RequestMessage(pIndex, 0, p.blockSize);
 			dOutStream.writeInt(13);
 			dOutStream.writeByte(REQUEST_ID);
 			dOutStream.writeInt(pIndex);
@@ -221,7 +221,7 @@ public class Peer implements runnable{
 			//request the block from this peer
 			while(mMade < p.numBlocks){
 				int begin = mMade * p.blockSize;
-				RequestMessage rm = new RequestMessage(pIndex, begin, p.blockSize);
+				Message.RequestMessage rm = new Message.RequestMessage(pIndex, begin, p.blockSize);
 				dOutStream.writeInt(13);
 				dOutStream.writeByte(REQUEST_ID);
 				dOutStream.writeInt(pIndex);
@@ -233,7 +233,7 @@ public class Peer implements runnable{
 		}		
 	}
 	public void sendSomeHaves(){
-		if(gMem.numPiecesGotten == 0){
+		if(RUBTClient.globalMemory.numPiecesGotten == 0){
 			//send a keep alive message
 			int k = 0;
 			dOutStream.writeInt(k);
@@ -244,8 +244,8 @@ public class Peer implements runnable{
 				if(haveLim == 10){
 					break;
 				}
-				if(pieces.get(i).verified){
-					len = 5;
+				if(RUBTClient.globalMemory.pieces.get(i).verified){
+					int len = 5;
 					dOutStream.writeInt(len);
 					dOutStream.writeByte(HAVE_ID);
 					dOutStream.writeInt(i);
@@ -257,17 +257,17 @@ public class Peer implements runnable{
 	}
 	//for client 132, it will send a have message once we have blocks
 	public void sendHave(){
-		while(gMem.numPiecesGotten == 0){
+		while(RUBTClient.globalMemory.numPiecesGotten == 0){
 			try {
-				Thread.sleep(1000)
-            }catch(InteruptedException ex){
-                Thread.currentThread.interupt();
+				Thread.sleep(1000);
+            }catch(InterruptedException ex){
+                Thread.currentThread().interrupt();
             }
 		}
 		int len;
-		while(!gMem.isFinished){
+		while(!RUBTClient.globalMemory.isFinished){
 		for(int i = 0; i < pieces.size(); i++){
-			if(pieces.get(i).verified){
+			if(RUBTClient.globalMemory.pieces.get(i).verified){
 				len = 5;
 				dOutStream.writeInt(len);
 				dOutStream.writeByte(HAVE_ID);
@@ -281,14 +281,14 @@ public class Peer implements runnable{
 			int pieceIndex = dInStream.readInt();
 			int begin = dInStream.readInt();
 			int length = dInStream.readInt();
-			Piece p = pieces.get(pieceIndex)
+			Piece p = RUBTClient.globalMemory.pieces.get(pieceIndex);
 			if(p.verified){
 				seed.sendPiece(this, pieceIndex);
 				//dont want to waste too much time seeding
 			try {
-				Thread.sleep(1000)
-            }catch(InteruptedException ex){
-                Thread.currentThread.interupt();
+				Thread.sleep(1000);
+            }catch(InterruptedException ex){
+                Thread.currentThread().interrupt();
             }
 				}
 			} 

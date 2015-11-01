@@ -24,7 +24,7 @@ public class Piece{
 		this.pieceSize = pieceSize;
 		this.numBlocks = pieceSize/blockSize;
 		blocksGottenIndex = makeBlockArray();
-		this.verify = new Verify();
+		this.verify = new Verify(RUBTClient.tInfo);
 		}
 	}
 	
@@ -33,6 +33,7 @@ public class Piece{
 		for(int i = 0; i < numBlocks; i++){
 			a[i] = 0;
 		}
+		return a;
 	}
 
 	public void writeBlock(byte[] b, int begin){
@@ -58,6 +59,7 @@ public class Piece{
 		if(numBlocks == 0){
 			return 0;
 		}
+		return -1;
 
 	}
 	/*
@@ -69,11 +71,11 @@ public class Piece{
 	public int haveAllBlocks(){
 		synchronized(this){
 		for(int i = 0; i < numBlocks; i++){
-			if(a[i] == 0){
+			if(rawBytes[i*blockSize] == 0){
 				return 0;
 			}
 		}	//if our bytes
-			if(!verify.checkBytes(rawBytes, pieceIndex)){
+			if(!verify.checkHash(rawBytes, pieceIndex)){
 				System.out.println("The data was corrupt, trying to redownload");
 				reset();
 				return -1;

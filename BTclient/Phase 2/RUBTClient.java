@@ -1,3 +1,4 @@
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.*;
@@ -10,7 +11,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.nio.ByteBuffer;
-
+import java.lang.*;
 public class RUBTClient{
 
     public static String file_destination;
@@ -18,7 +19,7 @@ public class RUBTClient{
     public static byte[] protocol_string = new byte[] { 'B', 'i', 't', 'T',
 			'o', 'r', 'r', 'e', 'n', 't', ' ', 'p', 'r', 'o', 't', 'o', 'c',
 			'o', 'l' };
-	public static TorrentInfo tInfo = null;
+	public static TorrentInfo tInfo;
 	public static byte[] info_hash = null;
     public static MemCheck globalMemory = null;
     public static final int PEER_LIMIT = 5;
@@ -103,23 +104,34 @@ public class RUBTClient{
            }
         }
         while(!globalMemory.isFinished){
-            try {Thread.sleep(1000)
+            try {
+                Thread.sleep(1000);
 
-            }catch(InteruptedException ex){
-                Thread.currentThread.interupt();
+            }catch(InterruptedException ex){
+                Thread.currentThread().interrupt();
             }
         }
         ArrayList<Piece> finalP = globalMemory.pieces;
-        FileOutputStream fOutStream = new FileOutputStream(new File(file_destination));
+        FileOutputStream fOutStream;
+        try{
+        fOutStream = new FileOutputStream(new File(file_destination));
+        }catch(FileNotFoundException e){
+            return;
+        }
         for(int i = 0; i < globalMemory.numPieces; i++){
             Piece f = finalP.get(i);
-            fOutStream.write(f.getBytes());
+            try{
+                fOutStream.write(f.getBytes());
+            }catch(IOException e){
+                System.out.println("Problem");
+                return;
+            }
         }
 
     }
     
     public static TrackerResponse decodeTrackerResponse(byte[] tr) throws BencodingException{
-    	Object o = GivenTools.Bencoder2.decode(tr);
+    	Object o = Bencoder2.decode(tr);
     	HashMap<ByteBuffer, Object> response = (HashMap<ByteBuffer, Object>) o;
     	TrackerResponse tr2 = null;
         //call TrackerResponse.java decode the information
