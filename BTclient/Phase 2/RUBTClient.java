@@ -1,3 +1,4 @@
+//package client;
 
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -93,11 +94,16 @@ public class RUBTClient{
         int peerIndex;
         info_hash = tInfo.info_hash.array();
         if(peers.size() < 15){
-            for(peerIndex = 0; peerIndex < peers.size(); peerIndex++){
+            //in actual production peerIndex < peers.size();
+            for(peerIndex = 0; peerIndex < 3; peerIndex++){
+              if(!peers.get(peerIndex).ipAdd.equals("128.6.171.132")){
 		      Peer peer = new Peer(peers.get(peerIndex).ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
+              Thread thread = new Thread(peer);
+              thread.start();
+            }
 	       }
         }else{
-            for(peerIndex = 0; peerIndex < 15; peerIndex++){
+            for(peerIndex = 0; peerIndex < 3; peerIndex++){
               Peer peer = new Peer(peers.get(peerIndex).ipAdd, peers.get(peerIndex).port, tInfo ,peerid);
               Thread thread = new Thread(peer);
               thread.start();

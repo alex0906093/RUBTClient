@@ -1,8 +1,9 @@
+//package client;
 import java.util.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.net.Socket;
-
+//import GivenTools;
 /*
  *This class will be used as the 
  *main memory so we can run threads 
@@ -36,6 +37,15 @@ public class MemCheck{
 		this.numPieces++; 
 		this.gotten = new boolean[numPieces];
 		this.getting = new boolean[numPieces];
+		for(int i = 0; i < numPieces;i++){
+			if(i == numPieces-1){
+				Piece p = new Piece(16384,lastByteSize,i);
+				this.pieces.add(p);
+			}else{
+				Piece p = new Piece(16384,tInfo.piece_length,i);
+				this.pieces.add(p);
+			}
+		}
 	}
 	//add block to piece, keep synchronization in tact
 	public void addBlock(byte[] b, int begin,int index){

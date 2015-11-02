@@ -1,8 +1,11 @@
+//package client;
+
 import java.util.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.net.Socket;
 import java.lang.*;
+//import GivenTools;
 
 public class Peer implements Runnable{
 	public TorrentInfo tInfo = null;
@@ -104,6 +107,7 @@ public class Peer implements Runnable{
 	 *
 	 */
 	public void run(){
+		System.out.println("Running Thread");
 		int nextMessage = 0;
 		RUBTClient.globalMemory = RUBTClient.globalMemory;
 		
@@ -115,18 +119,35 @@ public class Peer implements Runnable{
 		}
 		//because nextPieceIndex returns -1 if we have all of the pieces
 		while(nextMessage != -1){
+			long threadId = Thread.currentThread().getId();
+			System.out.println("Running loop on thread " + threadId);
 			int interest = 1;
-				
-			dOutStream.writeInt(interest);
-			dOutStream.writeByte(INTERESTED_ID);
-			dOutStream.flush();
-			firstMess = false;
-				
-			int messLen = dInStream.readInt();
-			int id = dInStream.readByte();
-
+			try{
+				dOutStream.writeInt(interest);
+				dOutStream.writeByte(INTERESTED_ID);
+				dOutStream.flush();
+				System.out.println("Wrote Interest");
+			}catch(IOException e){
+				System.out.println("Writting Error");
+			}
+			int messLen = 0;
+			int id = 0;
+			try{	
+				messLen = dInStream.readInt();
+				if(messLen == KEEP_ALIVE_ID){
+					System.out.println("Keep Alive");
+					continue;
+				}else{
+					id = dInStream.readByte();
+					System.out.println("Got Bytes");
+				}
+			}catch(IOException e){
+				System.out.println("Writting Error");
+			}
+			System.out.println("Got id " + (byte)id);
 		switch(id){
 			case KEEP_ALIVE_ID:{
+				System.out.println("Keep Alive Message");
 				if(RUBTClient.globalMemory.isFinished){
 					break;
 				}else{
@@ -134,6 +155,7 @@ public class Peer implements Runnable{
 				}
 			}
 			case CHOKE_ID:{//we're being choked
+				System.out.println("Choked");
 				if(peer_choking == 1){
 					if(RUBTClient.globalMemory.isFinished){
 						break;
@@ -146,66 +168,124 @@ public class Peer implements Runnable{
 				}
 			}
 			case UNCHOKE_ID:{
+				System.out.println("Unchoked");
 				peer_choking = 0;
 				continue;
 			}//nothing to do here yet
 			case INTERESTED_ID:{
 				peer_interested = 1;
-				sendSomeHaves();
+				System.out.println("Interested");
+				try{
+					if(RUBTClient.globalMemory.numPiecesGotten == 0){
+						continue;
+					}else{
+					sendSomeHaves();
+					}
+				}catch(IOException e){
+				System.out.println("Writting Error");
+				}
 				continue;
 			}
 			case HAVE_ID:{//They have a piece
 					//see if we want it
+					System.out.println("Have Message");
+					try{
 					int pIndex = dInStream.readInt();
-					if(RUBTClient.globalMemory.havePiece(pIndex) || RUBTClient.globalMemory.getting[pIndex]){
+					if(RUBTClient.globalMemory.havePiece(pIndex)){
 						continue;
 					}else{
 						//we want it, send request messages 
 						sendRequests(pIndex);
 					}
+					}catch(IOException e){
+						System.out.println("Writting Error");
+					}
 
-			}case BITFEILD_ID:
-				continue;
-			case REQUEST_ID:{
-					int pieceIndex = dInStream.readInt();
-					int begin = dInStream.readInt();
-					int blockLength = dInStream.readInt();
+			}case BITFEILD_ID:{
+					System.out.println("Bitfield Message");
+					try{
+						int r = messLen - 1;
+						byte[] bf = new byte[r];
+						dInStream.readFully(bf);
+					}catch(IOException e){
+						System.out.println("problem reading Stream");
+					}
+					continue;
+			}case HANDSHAKE_ID:{
+				System.out.println("Handshake, should not be happening");
+			}
 				
+			case REQUEST_ID:{
+				System.out.println("Request Message");
+				int pieceIndex = 0;
+				int begin = 0;
+				int blockLength = 0;
+				try{
+					pieceIndex = dInStream.readInt();
+					begin = dInStream.readInt();
+					blockLength = dInStream.readInt();
+				}catch(IOException e){
+					System.out.println("Writting Error");
+				}
 				//check if we have the piece, if so send it.
 				if(RUBTClient.globalMemory.havePiece(pieceIndex)){
-					seed.sendPiece(this, pieceIndex);
+					try{
+						seed.sendPiece(this, pieceIndex);
+					}catch(IOException e){
+						System.out.println("Error");
+					}
 				}else{//not sure for now if I don't have the piece
 					continue;
 				}
 			}
 			case PIECE_ID:{
+				System.out.println("Piece Message");
+				try{
 					int lengthOfBlock = messLen - 9;
 					int pieceIndex = dInStream.readInt();
 					int begin = dInStream.readInt();
 					byte[] block = new byte[lengthOfBlock];
 					dInStream.readFully(block);
+					System.out.println("length of Block is " + lengthOfBlock);
 					Piece gp = RUBTClient.globalMemory.pieces.get(pieceIndex);
 					gp.writeBlock(block, begin);
 					int c1 = gp.haveAllBlocks();
+					System.out.println("c1 is " + c1);
 					if(c1 == 0){
 						continue;
 					}else if(c1 == 1){
 						RUBTClient.globalMemory.gotten[pieceIndex] = true;
+						System.out.println("wrote piece to global memory");
 						nextMessage = RUBTClient.globalMemory.nextPieceIndex();
 					}else{
 						System.out.println("Problem with piece " + pieceIndex + "will try to fetch again");
 						continue;
 					}
+					dOutStream.writeInt(interest);
+					dOutStream.writeByte(INTERESTED_ID);
+					dOutStream.flush();
+				}catch(IOException e){
+					System.out.println("Writting Error");
 				}
 			}
+			case CANCEL_ID:{
+				System.out.println("Cancled");
+				continue;
+			}
+			}
 			//for the sake of efficiency
+			firstMess = false;
 			nextMessage = RUBTClient.globalMemory.nextPieceIndex();
 			if(nextMessage > -1){
+				try{
 				sendRequests(nextMessage);
+				}catch(IOException e){
+				System.out.println("Writting Error");
+				}
 			}
 		}
 	}
-	public void sendRequests(int pIndex){
+	public void sendRequests(int pIndex) throws IOException{
 		Piece p = RUBTClient.globalMemory.getPiece(pIndex);
 		int i = 0;
 		if(p.numBlocks == 0){
@@ -232,7 +312,7 @@ public class Peer implements Runnable{
 			}
 		}		
 	}
-	public void sendSomeHaves(){
+	public void sendSomeHaves() throws IOException{
 		if(RUBTClient.globalMemory.numPiecesGotten == 0){
 			//send a keep alive message
 			int k = 0;
@@ -259,12 +339,15 @@ public class Peer implements Runnable{
 	public void sendHave(){
 		while(RUBTClient.globalMemory.numPiecesGotten == 0){
 			try {
+				long threadId = Thread.currentThread().getId();
+				System.out.println("Sleeping on thread " + threadId);
 				Thread.sleep(1000);
             }catch(InterruptedException ex){
                 Thread.currentThread().interrupt();
             }
 		}
 		int len;
+		try{
 		while(!RUBTClient.globalMemory.isFinished){
 		for(int i = 0; i < pieces.size(); i++){
 			if(RUBTClient.globalMemory.pieces.get(i).verified){
@@ -293,6 +376,9 @@ public class Peer implements Runnable{
 				}
 			} 
 		}
+	}catch(IOException e){
+		System.out.println("Writting Error");
+	}
 	}
 	public void closeCon() throws Exception{
 		socket.close();

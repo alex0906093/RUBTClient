@@ -1,6 +1,10 @@
+//package client;
+
 import java.security.MessageDigest;
 import java.util.Arrays;
-
+import java.security.NoSuchAlgorithmException;
+import java.nio.ByteBuffer;
+//import GivenTools;
 
 public class Verify{
 	TorrentInfo t;
@@ -20,7 +24,10 @@ public class Verify{
 		}
 		byte[] piece_hash = d.digest(check);
 		d.update(piece_hash);
-		if(Arrays.equals(piece_hash, tInfo.piece_hashes[index])){
+		ByteBuffer buf = t.piece_hashes[index];
+		byte[] c = new byte[20];
+		buf.get(c, index*20, index*20+19);
+		if(Arrays.equals(piece_hash, c)){
 			return true;
 		}
 		else{

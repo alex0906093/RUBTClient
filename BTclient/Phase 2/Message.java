@@ -1,6 +1,10 @@
+//package client;
+
 import java.io.*;
 import java.nio.*;
 import java.util.Arrays;
+//import GivenTools;
+
 public class Message {
 
     //Declare message types

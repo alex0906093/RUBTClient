@@ -1,8 +1,10 @@
+//package client;
+
 import java.util.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.net.Socket;
-
+//import GivenTools;
 
 public class Piece{
 	public byte[] rawBytes;
@@ -38,9 +40,18 @@ public class Piece{
 
 	public void writeBlock(byte[] b, int begin){
 		synchronized(this){
-			if(rawBytes[begin] == 0){
+			if(rawBytes[begin] != 0){
 				return;
 			}
+			int a;
+			if(begin == 0){
+				a = 0;
+			}else{
+				a = pieceSize/begin;
+				a--;
+			}
+		System.out.println("Piece size is " + pieceSize + " Writing Block " + a + " of " + numBlocks + " to piece " + pieceIndex);
+		System.out.println("byte array length is " + b.length);
 		System.arraycopy(b,0,this.rawBytes,begin,b.length);
 		}
 	}
@@ -71,7 +82,8 @@ public class Piece{
 	public int haveAllBlocks(){
 		synchronized(this){
 		for(int i = 0; i < numBlocks; i++){
-			if(rawBytes[i*blockSize] == 0){
+			if(this.rawBytes[i*blockSize] == 0){
+				System.out.println("Block " + i + "of Piece " + pieceIndex + " is 0");
 				return 0;
 			}
 		}	//if our bytes
@@ -82,6 +94,7 @@ public class Piece{
 			}else{
 				verified = true;
 				RUBTClient.globalMemory.numPiecesGotten++;
+				System.out.println("Wrote piece " + pieceIndex);
 				return 1;
 			}
 		}

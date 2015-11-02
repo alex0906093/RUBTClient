@@ -1,7 +1,10 @@
+//package client;
+
 import java.util.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.net.Socket;
+//import GivenTools;
 
 public class Seed implements Runnable{
 	/*GLOBALS*/
@@ -10,10 +13,10 @@ public class Seed implements Runnable{
 	public Seed(){
 		this.gMem = RUBTClient.globalMemory;
 	}
-	public void sendPiece(Peer p, int pieceIndex){
+	public void sendPiece(Peer p, int pieceIndex) throws IOException{
 		Piece piece = RUBTClient.globalMemory.getPiece(pieceIndex);
 		int bLength = piece.blockSize;
-		byte[] rawbytes = piece.getBytes();
+		byte[] rawBytes = piece.getBytes();
 		int pmsSent = 0;
 		int len = 9 + piece.blockSize;
 
