@@ -5,6 +5,9 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.net.Socket;
 import java.lang.*;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
+
 //import GivenTools;
 
 public class Peer implements Runnable{
@@ -24,7 +27,8 @@ public class Peer implements Runnable{
 	private int am_interested = 0;
 	private int peer_choking = 1;
 	private int peer_interested = 0;
-	
+	private Queue<Integer> availablePieces;
+	private LinkedList aPieces;
 	public static final byte KEEP_ALIVE_ID = -1;
     
     public static final byte CHOKE_ID = 0;
@@ -66,6 +70,7 @@ public class Peer implements Runnable{
 		this.ipAdd = ipAdd;
 		this.port = port;
 		this.tInfo = tInfo;
+		this.availablePieces = new LinkedList<Integer>();
 		System.out.println("IP Address of peer is " + ipAdd + "opening Socket");
 		//try to establish a connection and open a socket
 		try{
@@ -100,6 +105,7 @@ public class Peer implements Runnable{
 		}catch(Exception e){
 			System.out.println("Exception thrown for handshake");
 		}
+		
 		return true;
 	}
 	/*
@@ -122,13 +128,37 @@ public class Peer implements Runnable{
 			long threadId = Thread.currentThread().getId();
 			System.out.println("Running loop on thread " + threadId);
 			int interest = 1;
-			try{
-				dOutStream.writeInt(interest);
-				dOutStream.writeByte(INTERESTED_ID);
-				dOutStream.flush();
-				System.out.println("Wrote Interest");
-			}catch(IOException e){
-				System.out.println("Writting Error");
+			if(firstMess){
+				try{
+					dOutStream.writeInt(interest);
+					dOutStream.writeByte(INTERESTED_ID);
+					dOutStream.flush();
+					System.out.println("Wrote Interest");
+					firstMess = false;
+				}catch(IOException e){
+					System.out.println("Writting Error");
+				}
+			}else{
+					int a;
+					while(RUBTClient.globalMemory.gotten[a=availablePieces.remove()] || RUBTClient.globalMemory.getting[a]){
+						if(availablePieces.peek() == null){
+							a = -1;
+							break;
+						}
+						else{
+							continue;
+						}
+					}
+					if(a != -1){
+						System.out.println("Sending request for piece " + a);
+						try{
+							RUBTClient.globalMemory.getting[a] = true;
+							sendRequests(a);
+						}catch(IOException e){
+
+						}
+					}
+
 			}
 			int messLen = 0;
 			int id = 0;
@@ -170,6 +200,26 @@ public class Peer implements Runnable{
 			case UNCHOKE_ID:{
 				System.out.println("Unchoked");
 				peer_choking = 0;
+				try{
+					int a;
+					while(RUBTClient.globalMemory.gotten[a=availablePieces.remove()] || RUBTClient.globalMemory.getting[a]){
+						if(availablePieces.peek() == null){
+							a = -1;
+							break;
+						}
+						else{
+							continue;
+						}
+					}
+					if(a != -1){
+						System.out.println("Sending request for piece " + a);
+						RUBTClient.globalMemory.getting[a] = true;
+						sendRequests(a);
+
+					}
+				
+				}catch(IOException e){
+				}
 				continue;
 			}//nothing to do here yet
 			case INTERESTED_ID:{
@@ -207,6 +257,7 @@ public class Peer implements Runnable{
 						int r = messLen - 1;
 						byte[] bf = new byte[r];
 						dInStream.readFully(bf);
+						queueBitfield(bf);
 					}catch(IOException e){
 						System.out.println("problem reading Stream");
 					}
@@ -245,8 +296,10 @@ public class Peer implements Runnable{
 					int pieceIndex = dInStream.readInt();
 					int begin = dInStream.readInt();
 					byte[] block = new byte[lengthOfBlock];
-					dInStream.readFully(block);
-					System.out.println("length of Block is " + lengthOfBlock);
+					for(int l = 0; l < lengthOfBlock; l++){
+						block[l] = dInStream.readByte();
+					}
+					System.out.println("Got piece message for piece " + pieceIndex + " With offset " + begin);
 					Piece gp = RUBTClient.globalMemory.pieces.get(pieceIndex);
 					gp.writeBlock(block, begin);
 					int c1 = gp.haveAllBlocks();
@@ -261,9 +314,6 @@ public class Peer implements Runnable{
 						System.out.println("Problem with piece " + pieceIndex + "will try to fetch again");
 						continue;
 					}
-					dOutStream.writeInt(interest);
-					dOutStream.writeByte(INTERESTED_ID);
-					dOutStream.flush();
 				}catch(IOException e){
 					System.out.println("Writting Error");
 				}
@@ -311,6 +361,20 @@ public class Peer implements Runnable{
 				mMade++;
 			}
 		}		
+	}
+	public void queueBitfield(byte[] bitfield){
+		try{
+		BitfieldIterable iter = new BitfieldIterable(bitfield);
+		int i = 0;
+		for(boolean val : iter){
+			if(val){
+				System.out.print(" " + i +" " );
+				this.availablePieces.add(i);
+			}
+			i++;
+		}}catch(UnsupportedOperationException e){
+
+		}
 	}
 	public void sendSomeHaves() throws IOException{
 		if(RUBTClient.globalMemory.numPiecesGotten == 0){

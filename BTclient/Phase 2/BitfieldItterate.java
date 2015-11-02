@@ -1,7 +1,7 @@
 import java.util.Iterator;
 
-public class BitfieldItterate{
-	public byte[] bitfield;
+public class BitfieldItterate implements Iterable<Boolean>{
+	private final byte[] bitfield;
 
 	public BitfieldItterate(byte[] bitfield){
 		this.bitfield = bitfield;
@@ -17,7 +17,7 @@ public class BitfieldItterate{
 		public boolean next(){
 			boolean val = (bitfield[arrayIndex] >>(7-bitIndex) & 1) == 1;
 			bitIndex++;
-			if(bitIndex ==8){
+			if(bitIndex == 8){
 				bitIndex = 0;
 				arrayIndex++;
 			}

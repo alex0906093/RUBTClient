@@ -24,15 +24,14 @@ public class Verify{
 		}
 		byte[] piece_hash = d.digest(check);
 		d.update(piece_hash);
-		ByteBuffer buf = t.piece_hashes[index];
-		byte[] c = new byte[20];
-		buf.get(c, index*20, index*20+19);
-		if(Arrays.equals(piece_hash, c)){
-			return true;
+		for(int i = 0; i < t.piece_hashes.length; i++){
+			if(Arrays.equals(piece_hash, t.piece_hashes[i].array())){
+				return true;
+			}
 		}
-		else{
+
 			System.out.println("Hash for piece " + index + "Did not check out");
 			return false;
-		}
+
 	}
 }
