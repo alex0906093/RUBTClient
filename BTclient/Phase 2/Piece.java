@@ -16,7 +16,7 @@ public class Piece{
 	public int numBlocks;
 	public Verify verify;
 	public boolean verified;
-	
+	public boolean[] wroteBlock;
 	public Piece(int blockSize, int pieceSize, int pieceIndex){
 		synchronized(this){
 		this.rawBytes = new byte[pieceSize];
@@ -24,8 +24,10 @@ public class Piece{
 		this.verified = false;
 		this.blockSize = blockSize;
 		this.pieceSize = pieceSize;
+		this.pieceIndex = pieceIndex;
 		this.numBlocks = pieceSize/blockSize;
-		blocksGottenIndex = makeBlockArray();
+		this.blocksGottenIndex = makeBlockArray();
+		this.wroteBlock = new boolean[pieceSize/blockSize];
 		this.verify = new Verify(RUBTClient.tInfo);
 		}
 	}
@@ -50,6 +52,7 @@ public class Piece{
 				a = pieceSize/begin;
 				a--;
 			}
+			wroteBlock[a] = true;
 		System.out.println("Piece size is " + pieceSize + " Writing Block " + a + " of " + numBlocks + " to piece " + pieceIndex);
 		System.out.println("byte array length is " + b.length);
 		System.arraycopy(b,0,this.rawBytes,begin,b.length);
@@ -63,7 +66,7 @@ public class Piece{
 	//figure out which block is needed next
 	public int nextBlockNeeded(){
 		for(int i = 0; i < numBlocks; i++){
-			if(rawBytes[i*blockSize] == 0){
+			if(!wroteBlock[i]){
 				return i;
 			}
 		}
@@ -82,8 +85,9 @@ public class Piece{
 	public int haveAllBlocks(){
 		synchronized(this){
 		for(int i = 0; i < numBlocks; i++){
-			if(this.rawBytes[i*blockSize] == 0){
-				System.out.println("Block " + i + "of Piece " + pieceIndex + " is 0");
+			if(!this.wroteBlock[i]){
+				System.out.println("Block " + i + " of Piece " + pieceIndex + " is 0");
+				RUBTClient.globalMemory.getting[pieceIndex] = false;
 				return 0;
 			}
 		}	//if our bytes
@@ -94,6 +98,7 @@ public class Piece{
 			}else{
 				verified = true;
 				RUBTClient.globalMemory.numPiecesGotten++;
+				RUBTClient.globalMemory.gotten[pieceIndex] = true;
 				System.out.println("Wrote piece " + pieceIndex);
 				return 1;
 			}

@@ -25,21 +25,27 @@ public class MemCheck{
 	//constructor
 	public MemCheck(TorrentInfo tInfo){
 		this.tInfo = tInfo;
-		numPiecesGotten = 0;
+		this.numPiecesGotten = 0;
 		isFinished = false;
 		pieces_make();
 	}
 	//set global memory appropriately
 	private void pieces_make(){
-		int lastByteSize = tInfo.file_length % tInfo.piece_length;
+		System.out.println("file size is " + tInfo.file_length);
+		int lastByteSize = tInfo.file_length%tInfo.piece_length;
 		int tmp = tInfo.file_length - lastByteSize;
+		System.out.println("last piece size is " + lastByteSize);
+		System.out.println("tmp is " + tmp );
 		this.numPieces = tmp/tInfo.piece_length;
+		//Maybe not?
 		this.numPieces++; 
 		this.gotten = new boolean[numPieces];
 		this.getting = new boolean[numPieces];
+		System.out.println("numPieces is " + numPieces);
 		for(int i = 0; i < numPieces;i++){
 			if(i == numPieces-1){
-				Piece p = new Piece(16384,lastByteSize,i);
+				int a = (lastByteSize < 16384) ? lastByteSize : 16384;
+				Piece p = new Piece(a,lastByteSize,i);
 				this.pieces.add(p);
 			}else{
 				Piece p = new Piece(16384,tInfo.piece_length,i);
