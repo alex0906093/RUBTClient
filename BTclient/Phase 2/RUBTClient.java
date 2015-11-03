@@ -4,6 +4,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.*;
 import java.io.*;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.net.URL;
@@ -24,7 +25,7 @@ public class RUBTClient{
 	public static byte[] info_hash = null;
     public static MemCheck globalMemory = null;
     public static final int PEER_LIMIT = 5;
-	public static void main(String[] args){
+	public static void main(String[] args) throws FileNotFoundException, IOException{
 		/*Get variables ready*/
         
         String torrentFN;
@@ -46,6 +47,10 @@ public class RUBTClient{
 			System.out.println("Invalid number of command line arguments");
 			return;
 		}
+        RandomAccessFile fSave = null;
+        try{
+            fSave = new RandomAccessFile(new File(saveFN), "rw");
+        }catch(FileNotFoundException e){}
         /*read torrent file*/
 		BufferedReader reader = null;
 		try{
@@ -70,7 +75,13 @@ public class RUBTClient{
         /*send bytes to helper class*/
         try{
             tInfo = new TorrentInfo(b);
-            globalMemory = new MemCheck(tInfo);
+            try{
+                fSave.setLength((long)tInfo.file_length);
+                byte[] empty = new byte[tInfo.file_length];
+                fSave.write(empty, 0,empty.length);
+                }catch(IOException e){}
+            globalMemory = new MemCheck(tInfo,fSave);
+            System.out.println("File mem length is " + fSave.length());
             System.out.println(tInfo.file_name);
         }catch(BencodingException e){
             System.out.println("Bencoding Exception");

@@ -3,6 +3,7 @@ import java.util.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.net.Socket;
+import java.io.RandomAccessFile;
 //import GivenTools;
 /*
  *This class will be used as the 
@@ -21,9 +22,12 @@ public class MemCheck{
 	public TorrentInfo tInfo;
 	public int numPiecesGotten;
 	public boolean isFinished;
+	private RandomAccessFile file;
+	public int lastByteSize;
 	int openPeers = 0;
 	//constructor
-	public MemCheck(TorrentInfo tInfo){
+	public MemCheck(TorrentInfo tInfo, RandomAccessFile file){
+		this.file = file;
 		this.tInfo = tInfo;
 		this.numPiecesGotten = 0;
 		isFinished = false;
@@ -32,7 +36,8 @@ public class MemCheck{
 	//set global memory appropriately
 	private void pieces_make(){
 		System.out.println("file size is " + tInfo.file_length);
-		int lastByteSize = tInfo.file_length%tInfo.piece_length;
+		int lastByteSize = tInfo.file_length %tInfo.piece_length;
+		this.lastByteSize = lastByteSize;
 		int tmp = tInfo.file_length - lastByteSize;
 		System.out.println("last piece size is " + lastByteSize);
 		System.out.println("tmp is " + tmp );
@@ -46,6 +51,7 @@ public class MemCheck{
 			if(i == numPieces-1){
 				int a = (lastByteSize < 16384) ? lastByteSize : 16384;
 				Piece p = new Piece(a,lastByteSize,i);
+				System.out.println("last piece blocksize is " + lastByteSize);
 				this.pieces.add(p);
 			}else{
 				Piece p = new Piece(16384,tInfo.piece_length,i);
@@ -64,6 +70,20 @@ public class MemCheck{
 			}else{
 				getting[index] = false;
 			}
+	}
+	public void writeFile(byte[] b, int pIndex){
+		synchronized(this.file){
+			try{
+				int r = pIndex*tInfo.piece_length;
+				try{
+					System.out.println("file length here is " + this.file.length());
+				}catch(IOException e){}
+				System.out.println("b.length is " + b.length);
+				System.out.println("r is "+ r);
+				this.file.seek(r);
+				this.file.write(b);
+			}catch(IOException e){}
+		}
 	}
 	//check if we have the piece
 	public boolean havePiece(int index){

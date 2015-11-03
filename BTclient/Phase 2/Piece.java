@@ -14,6 +14,7 @@ public class Piece{
 	public int pieceIndex;
 	public int[] blocksGottenIndex;
 	public int numBlocks;
+	private Object lock1;
 	public Verify verify;
 	public boolean verified;
 	public boolean[] wroteBlock;
@@ -26,6 +27,9 @@ public class Piece{
 		this.pieceSize = pieceSize;
 		this.pieceIndex = pieceIndex;
 		this.numBlocks = pieceSize/blockSize;
+		if(pieceSize%blockSize != 0){
+			this.numBlocks++;
+		}
 		this.blocksGottenIndex = makeBlockArray();
 		this.wroteBlock = new boolean[pieceSize/blockSize];
 		this.verify = new Verify(RUBTClient.tInfo);
@@ -99,6 +103,7 @@ public class Piece{
 				verified = true;
 				RUBTClient.globalMemory.numPiecesGotten++;
 				RUBTClient.globalMemory.gotten[pieceIndex] = true;
+				RUBTClient.globalMemory.writeFile(rawBytes, pieceIndex);
 				System.out.println("Wrote piece " + pieceIndex);
 				return 1;
 			}
