@@ -29,6 +29,7 @@ public class Peer implements Runnable{
 	private int peer_interested = 0;
 	private Queue<Integer> availablePieces;
 	private LinkedList<Integer> gettingList;
+	private Queue<Integer> sentList;
 	private LinkedList aPieces;
 	public static final byte KEEP_ALIVE_ID = -1;
     
@@ -78,8 +79,8 @@ public class Peer implements Runnable{
 			socket = new Socket(ipAdd, port);
 			input = socket.getInputStream();
 			output = socket.getOutputStream();
-			dInStream = new DataInputStream(input);
-			dOutStream = new DataOutputStream(output);
+			this.dInStream = new DataInputStream(input);
+			this.dOutStream = new DataOutputStream(output);
 		}catch(Exception e){
 			System.out.println("Connection setup failed");
 		}
@@ -117,6 +118,7 @@ public class Peer implements Runnable{
 		System.out.println("Running Thread");
 		int nextMessage = 0;
 		gettingList = new LinkedList<Integer>();
+		sentList = new LinkedList<Integer>();
 		nextMessage = RUBTClient.globalMemory.nextPieceIndex();
 		boolean firstMess = true;
 		//seed checker IP Address
@@ -145,7 +147,8 @@ public class Peer implements Runnable{
 
 			}else{
 					int a = 0;
-					while(availablePieces.peek() != null && RUBTClient.globalMemory.gotten[a=availablePieces.remove()]){
+					synchronized(this.availablePieces){
+					while(this.availablePieces.peek() != null && RUBTClient.globalMemory.gotten[a=this.availablePieces.remove()]){
 						if(RUBTClient.globalMemory.getting[a]){
 							continue;
 						}
@@ -153,23 +156,25 @@ public class Peer implements Runnable{
 							break;
 						}
 					}
-					if(availablePieces.peek() == null){
+					if(this.availablePieces.peek() == null){
 						int o = 0;
 						for(int m =0; m < 436; m++){
 							if(!RUBTClient.globalMemory.gotten[m]){
-								availablePieces.add(m);
+								this.availablePieces.add(m);
 								o++;
 							}
 						}
 						if(o == 0)
 							a = -1;
 					}
-
+				}
 					if(a != -1){
 						System.out.println("Sending request for piece " + a);
-						gettingList.add(a);
+						synchronized(this.gettingList){
+							this.gettingList.add(a);
+						}
 						try{
-							RUBTClient.globalMemory.getting[a] = true;
+							RUBTClient.globalMemory.addGetting(a);
 							sendRequests(a);
 						}catch(IOException e){
 
@@ -178,7 +183,7 @@ public class Peer implements Runnable{
 
 			}
 			int messLen = 0;
-			int id = 0;
+			int id = -12;
 			try{	
 				messLen = dInStream.readInt();
 				System.out.println("messLen is " + messLen);
@@ -187,10 +192,21 @@ public class Peer implements Runnable{
 					continue;
 				}else{
 					id = dInStream.readByte();
-					System.out.println("Got Bytes");
+					System.out.println("id is "+ id);
 				}
 			}catch(IOException e){
-				System.out.println("Writting Error");
+				System.out.println("Reading Error");
+				e.printStackTrace();
+				synchronized(this.gettingList){
+					for(int m : this.gettingList){
+						try{
+							sendRequests(m);
+						}catch(IOException ie){
+							System.out.println(ie.getMessage());
+						}
+					}
+				}
+
 			}
 			System.out.println("Got id " + (byte)id);
 		switch(id){
@@ -202,25 +218,23 @@ public class Peer implements Runnable{
 					continue;
 				}
 			}
-			case CHOKE_ID:{//we're being choked
-				System.out.println("Choked");
-				for(int m =0; m < 436; m++){
-
+			case -12:{
+				System.out.println("dInStream Problem");
+				synchronized(this.gettingList){
+				for(int m = 0; m < 436; m++){
 					if(!RUBTClient.globalMemory.gotten[m]){
-						System.out.print("Didnt finish piece " + m);
 						if(RUBTClient.globalMemory.getting[m]){
-							System.out.print("and we think we're getting it \n");
+							RUBTClient.globalMemory.removeGetting(m);
+							this.gettingList.remove(new Integer(m));
 						}
 					}
 				}
-				synchronized(gettingList){
-				for(int p : gettingList){
-					if(RUBTClient.globalMemory.getting[p]){
-						RUBTClient.globalMemory.getting[p] = false;
-					}
-					gettingList.remove(p);
-				}
-				}
+			}
+			continue;
+			}
+			case CHOKE_ID:{//we're being choked
+				System.out.println("Choked");
+
 				System.out.println(RUBTClient.globalMemory.numPiecesGotten + " " + RUBTClient.globalMemory.numPieces);
 				if(peer_choking == 1){
 					if(RUBTClient.globalMemory.isFinished){
@@ -365,6 +379,18 @@ public class Peer implements Runnable{
 						gettingList.remove(new Integer(pieceIndex));
 						System.out.println("wrote piece " + pieceIndex + " to global memory");
 						nextMessage = RUBTClient.globalMemory.nextPieceIndex();
+						int check1 = sentList.remove();
+						if(check1 == pieceIndex){
+							System.out.println("Queue works");
+						}
+						try{
+							dOutStream.writeInt(5);
+							dOutStream.writeByte(HAVE_ID);
+							dOutStream.writeInt(pieceIndex);
+							dOutStream.flush();
+						}catch(IOException e){
+							e.printStackTrace();
+						}
 						continue;
 					}else{
 						System.out.println("Problem with piece " + pieceIndex + "will try to fetch again");
@@ -397,9 +423,17 @@ public class Peer implements Runnable{
 			}
 		}
 	}
-	public void sendRequests(int pIndex) throws IOException{
+	public boolean sendRequests(int pIndex) throws IOException{
 		Piece p = RUBTClient.globalMemory.getPiece(pIndex);
 		int i = 0;
+		if(sentList.size() > 4){
+			return false;
+		}
+		try{
+			Thread.sleep(1000);
+		}catch(InterruptedException ire){
+
+		}
 		if(p.numBlocks == 0){
 			Message.RequestMessage rm = new Message.RequestMessage(pIndex, 0, p.blockSize);
 			dOutStream.writeInt(13);
@@ -408,6 +442,8 @@ public class Peer implements Runnable{
 			dOutStream.writeInt(0);
 			dOutStream.writeInt(p.blockSize);
 			dOutStream.flush();
+			sentList.add(pIndex);
+			return true;
 		}else{
 			int mMade = 0;
 			//request the block from this peer
@@ -422,7 +458,10 @@ public class Peer implements Runnable{
 				dOutStream.flush();
 				mMade++;
 			}
-		}		
+			sentList.add(pIndex);
+			return true;
+		}
+				
 	}
 	public void processCancel(int cIndex, int cBegin, int cLength){
 		RUBTClient.globalMemory.getting[cIndex] = false;

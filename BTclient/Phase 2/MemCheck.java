@@ -59,6 +59,16 @@ public class MemCheck{
 			}
 		}
 	}
+	public void addGetting(int index){
+		synchronized(this.getting){
+			this.getting[index]=true;
+		}
+	}
+	public void removeGetting(int index){
+		synchronized(this.getting){
+			this.getting[index]=false;
+		}
+	}
 	//add block to piece, keep synchronization in tact
 	public void addBlock(byte[] b, int begin,int index){
 			//starting position of the piece
